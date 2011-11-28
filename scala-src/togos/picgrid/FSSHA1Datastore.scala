@@ -25,6 +25,11 @@ class FSSHA1Datastore( val dir:File ) extends Datastore
 		new File(dir + "/" + sha1.substring(0,2) + "/." + sha1 + ".temp-" + (Math.random*Integer.MAX_VALUE).toInt )
 	}
 	
+	protected def makeParentDirs( f:File ) = {
+		val parentFile = f.getParentFile() 
+		if( parentFile != null && !parentFile.exists() ) parentFile.mkdirs()
+	}
+	
 	def apply(fn: String):ByteBlob = {
 		fn match {
 		case BITPRINT_REGEX(sha1,tt) =>
@@ -38,6 +43,7 @@ class FSSHA1Datastore( val dir:File ) extends Datastore
 		val digestor = new BitprintDigest()
 		val chunkIter = data.chunkIterator()
 		val tempFile = tempPath()
+		makeParentDirs( tempFile )
 		val fos = new FileOutputStream(tempFile)
 		while( chunkIter.hasNext() ) {
 			val chunk:ByteChunk = chunkIter.next().asInstanceOf[ByteChunk]
@@ -52,7 +58,9 @@ class FSSHA1Datastore( val dir:File ) extends Datastore
 		val sha1String = Base32.encode(sha1Hash)
 		fos.close()
 		
-		tempFile.renameTo( fullPathTo(sha1String) )
+		val destFile = fullPathTo(sha1String)
+		makeParentDirs( destFile )
+		tempFile.renameTo( destFile )
 		
 		return "urn:bitprint:" + sha1String + "." + Base32.encode(tigerTreeHash);
 	}

@@ -12,4 +12,8 @@ public class SimpleByteBlob implements ByteBlob
 	public SimpleByteBlob( ByteChunk c ) { this.c = c; }
 	public Iterator chunkIterator() { return new SingleItemIterator(c); }
 	public long getSize() { return c.getSize(); }
+	
+	public boolean equals( Object o ) {
+		return o instanceof ByteBlob ? BlobUtil.equals( this, (ByteBlob)o ) : false;
+	}
 }
