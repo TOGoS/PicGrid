@@ -16,6 +16,10 @@ public class FileBlob implements ByteBlob
 		this.file = file;
 	}
 	
+	public File getFile() {
+		return file;
+	}
+	
 	public Iterator chunkIterator() {
 		try {
 			FileInputStream fis = new FileInputStream(file);

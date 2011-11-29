@@ -2,14 +2,14 @@ package togos.picgrid
 
 import java.io.File
 import java.io.FileOutputStream
-
 import org.bitpedia.util.Base32
-
 import togos.mf.value.ByteBlob
 import togos.mf.value.ByteChunk
 import togos.picgrid.io.FileBlob
+import togos.picgrid.io.FileUtil.makeParentDirs
+import scala.collection.mutable.ListBuffer
 
-class FSSHA1Datastore( val dir:File ) extends Datastore
+class FSSHA1Datastore( val dir:File ) extends FSDatastore
 {
 	val BITPRINT_REGEX = """^urn:bitprint:([^\.]+)\.([^\.]+)$""".r 
 	
@@ -17,20 +17,18 @@ class FSSHA1Datastore( val dir:File ) extends Datastore
 		new File(dir + "/" + sha1.substring(0,2) + "/" + sha1)
 	}
 	
-	protected def tempPath():File = {
-		new File(dir + "/.temp-" + (Math.random*Integer.MAX_VALUE).toInt + "-" + (Math.random*Integer.MAX_VALUE).toInt + "-" + (Math.random*Integer.MAX_VALUE).toInt )
+	/**
+	 * @return a temporary path inside the repository
+	 */
+	def tempFile( ext:String="" ):File = {
+		new File(dir + "/.temp-" + (Math.random*Integer.MAX_VALUE).toInt + "-" + (Math.random*Integer.MAX_VALUE).toInt + "-" + (Math.random*Integer.MAX_VALUE).toInt + ext )
 	}
 	
-	protected def tempPathFor( sha1:String ):File = {
+	protected def tempFileFor( sha1:String ):File = {
 		new File(dir + "/" + sha1.substring(0,2) + "/." + sha1 + ".temp-" + (Math.random*Integer.MAX_VALUE).toInt )
 	}
 	
-	protected def makeParentDirs( f:File ) = {
-		val parentFile = f.getParentFile() 
-		if( parentFile != null && !parentFile.exists() ) parentFile.mkdirs()
-	}
-	
-	def apply(fn: String):ByteBlob = {
+	def apply( fn:String ):ByteBlob = {
 		fn match {
 		case BITPRINT_REGEX(sha1,tt) =>
 			val f = fullPathTo(sha1)
@@ -39,15 +37,17 @@ class FSSHA1Datastore( val dir:File ) extends Datastore
 		}
 	}
 	
-	def store(data: ByteBlob): String = {
+	/**
+	 * @param data the data to be identified
+	 * @param chunkCallback will be called for each chunk of data as it is processed
+	 * @return (full bitprint URN, base32-encoded SHA1)
+	 */
+	def identify( data:ByteBlob, chunkCallback:ByteChunk=>Unit=null ):(String,String) = {
 		val digestor = new BitprintDigest()
 		val chunkIter = data.chunkIterator()
-		val tempFile = tempPath()
-		makeParentDirs( tempFile )
-		val fos = new FileOutputStream(tempFile)
 		while( chunkIter.hasNext() ) {
 			val chunk:ByteChunk = chunkIter.next().asInstanceOf[ByteChunk]
-			fos.write( chunk.getBuffer(), chunk.getOffset(), chunk.getSize() )
+			if( chunkCallback != null ) chunkCallback( chunk )
 			digestor.update( chunk.getBuffer(), chunk.getOffset(), chunk.getSize() )
 		}
 		val hash = digestor.digest
@@ -56,12 +56,77 @@ class FSSHA1Datastore( val dir:File ) extends Datastore
 		val tigerTreeHash = new Array[Byte](24);
 		System.arraycopy( hash, 20, tigerTreeHash, 0, 24);
 		val sha1String = Base32.encode(sha1Hash)
+		return ("urn:bitprint:" + sha1String + "." + Base32.encode(tigerTreeHash), sha1String)
+	}
+	
+	/**
+	 *  
+	 */
+	def store( data:ByteBlob ):String = {
+		val tempFile = this.tempFile()
+		makeParentDirs( tempFile )
+		val fos = new FileOutputStream(tempFile)
+		val (urn, sha1String) = identify(data, (chunk:ByteChunk) => {fos.write( chunk.getBuffer(), chunk.getOffset(), chunk.getSize() )} )
 		fos.close()
 		
 		val destFile = fullPathTo(sha1String)
 		makeParentDirs( destFile )
 		tempFile.renameTo( destFile )
 		
-		return "urn:bitprint:" + sha1String + "." + Base32.encode(tigerTreeHash);
+		urn
+	}
+	
+	def +=( data:ByteBlob ):String = store(data)
+	
+	/**
+	 * Import an existing temporary file, moving it directly into the repository, returning its URN
+	 */
+	def storeAndDelete( tempFile:File ):String = {
+		val fileBlob = new FileBlob(tempFile)
+		val (urn, sha1String) = identify(fileBlob)
+		
+		val destFile = fullPathTo(sha1String)
+		makeParentDirs( destFile )
+		tempFile.renameTo( destFile )
+		
+		urn
+	}
+}
+object FSSHA1Datastore
+{
+	def main( args:Array[String] ) {
+		var datastoreDir:File = null
+		var command:String = null
+		var bareArgs:ListBuffer[String] = new ListBuffer[String]()
+		var i = 0
+		while( i < args.length ) {
+			args(i) match {
+				case "-datastore" =>
+					i += 1
+					datastoreDir = new File(args(i)) 
+				case arg if !arg.startsWith("-") =>
+					if( command == null ) {
+						command = arg
+					} else {
+						bareArgs += arg
+					}
+				case arg => throw new RuntimeException("Unrecognised argument: "+arg)
+			}
+			i += 1
+		}
+		
+		command match {
+			case "store" =>
+				if( datastoreDir == null ) {
+					throw new RuntimeException("No -datastore directory specified")
+				}
+				val datastore = new FSSHA1Datastore(datastoreDir) 
+				for( filename <- bareArgs ) {
+					val uri = datastore += new FileBlob(new File(filename))
+					System.out.println(filename + " -> " + uri)
+				}
+			case null => throw new RuntimeException("No sub-command given.")
+			case _ => throw new RuntimeException("Unrecognised sub-command: "+command)
+		}
 	}
 }

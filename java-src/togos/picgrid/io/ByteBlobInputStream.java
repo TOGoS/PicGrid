@@ -1,5 +1,7 @@
 package togos.picgrid.io;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 
@@ -63,5 +65,11 @@ public class ByteBlobInputStream extends InputStream
 		}
 		currentChunkPosition += len;
 		return len;
+	}
+	
+	public void close() throws IOException {
+		if( chunks instanceof Closeable ) {
+			((Closeable)chunks).close(); 
+		}
 	}
 }

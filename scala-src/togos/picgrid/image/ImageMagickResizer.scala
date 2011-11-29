@@ -1,0 +1,85 @@
+package togos.picgrid.image
+import java.io.File
+import togos.picgrid.FSDatastore
+import togos.picgrid.io.FileUtil.makeParentDirs
+import togos.picgrid.io.FileBlob
+import javax.imageio.ImageIO
+import java.io.FileInputStream
+import javax.imageio.ImageReader
+import togos.picgrid.FSSHA1Datastore
+
+class ImageMagickResizer( val datastore:FSDatastore, val convertExe:String )
+{
+	val imageInfoExtractor = new ImageInfoExtractor(datastore)
+	
+	def resize( infile:File, newWidth:Integer, newHeight:Integer, outFile:File ):Process = {
+		makeParentDirs( outFile )
+		val args = Array[String]( convertExe,infile.getPath(),"-thumbnail",(newWidth+"x"+newHeight+">"),"-quality","85",outFile.getPath() )
+		
+		System.err.print("$")
+		for( arg <- args ) {
+			System.err.print(" "+arg)
+		}
+		System.err.println()
+		
+		Runtime.getRuntime().exec(args);
+	}
+	
+	def resize( origUri:String, boxWidth:Integer, boxHeight:Integer ):String = {
+		val origBlob = datastore( origUri )
+		if( origBlob == null ) throw new Exception("Couldn't find "+origUri)
+		if( !origBlob.isInstanceOf[FileBlob] ) throw new Exception("Can only work with file blobs; got a "+origBlob.getClass())
+		val tempFile = datastore.tempFile(".jpg")
+		val imResult = resize( origBlob.asInstanceOf[FileBlob].getFile(), boxWidth, boxHeight, tempFile ).waitFor()
+		if( imResult != 0 ) {
+			throw new RuntimeException("convert returned non-zero status: "+imResult)
+		}
+		val len = tempFile.length()
+		return datastore.storeAndDelete( tempFile )
+	}
+}
+object ImageMagickResizer
+{
+	def main( args:Array[String] ) {
+		var datastoreDir:File = null
+		var inFilename:String = null
+		var outFile:File = null
+		var w = 512
+		var h = 384
+		
+		var i = 0
+		while( i < args.length ) {
+			if( "-datastore".equals(args(i)) ) {
+				i += 1
+				datastoreDir = new File(args(i))
+			} else if( "-w".equals(args(i)) ) {
+				i += 1
+				w = Integer.parseInt(args(i))
+			} else if( "-h".equals(args(i)) ) {
+				i += 1
+				h = Integer.parseInt(args(i))
+			} else if( "-o".equals(args(i)) ) {
+				i += 1
+				outFile = new File(args(i))
+			} else if( !args(i).startsWith("-") ) {
+				inFilename = args(i)
+			} else {
+				throw new RuntimeException("Unrecognised argument: "+args(i))
+			}
+			i += 1
+		}
+		
+		val datastore = if( datastoreDir == null ) null else new FSSHA1Datastore(datastoreDir)
+		
+		val imr = new ImageMagickResizer( datastore, "/usr/bin/convert" )
+		if( datastore == null ) {
+			if( inFilename == null ) throw new RuntimeException("No input file specified")
+			if( outFile == null ) throw new RuntimeException("No output file specified")
+		
+			imr.resize( new File(inFilename), w, h, outFile )
+		} else {
+			val thumbUri = imr.resize( inFilename, w, h )
+			System.out.println( "Resize result = "+thumbUri )
+		}
+	}
+}

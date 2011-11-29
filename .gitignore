@@ -1,0 +1,9 @@
+.cache
+.classpath
+.project
+.settings
+.scala_dependencies
+junk
+bin
+*.jpg
+*.png

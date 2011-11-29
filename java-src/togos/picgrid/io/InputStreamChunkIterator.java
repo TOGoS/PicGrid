@@ -1,12 +1,13 @@
 package togos.picgrid.io;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 
 import togos.mf.base.SimpleByteChunk;
 
-class InputStreamChunkIterator implements Iterator
+class InputStreamChunkIterator implements Iterator, Closeable
 {
 	InputStream is;
 	boolean eofReached;
@@ -26,6 +27,7 @@ class InputStreamChunkIterator implements Iterator
 			if( read == -1 ) {
 				eofReached = true;
 				is.close();
+				read = 0;
 			}
 			return new SimpleByteChunk( buf, 0, read );
 		} catch( IOException e ) {
@@ -39,5 +41,9 @@ class InputStreamChunkIterator implements Iterator
 	
 	public void remove() {
 		throw new UnsupportedOperationException();
+	}
+	
+	public void close() throws IOException {
+		is.close();
 	}
 }
