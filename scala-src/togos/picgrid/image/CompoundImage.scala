@@ -19,13 +19,19 @@ class CompoundImageComponent( val x:Integer, val y:Integer, val w:Integer, val h
 }
 
 class CompoundImage( val width:Integer, val height:Integer,
-	val components:Seq[CompoundImageComponent], val promotedImageUri:String )
+	val components:Seq[CompoundImageComponent],
+	val promotedImage1Uri:String, val promotedImage2Uri:String )
 {
+	def aspectRatio = width.toFloat / height
+	
 	def serialize():ByteBlob = {
 		val sb = new StringBuilder()
 		sb.append("COMPOUND-IMAGE "+width+","+height+"\n")
-		if( promotedImageUri != null ) {
-			sb.append("PROMOTE "+promotedImageUri)
+		if( promotedImage1Uri != null ) {
+			sb.append("PROMOTE1 "+promotedImage1Uri+"\n")
+		}
+		if( promotedImage2Uri != null ) {
+			sb.append("PROMOTE2 "+promotedImage2Uri+"\n")
 		}
 		for( c <- components ) {
 			sb.append("COMPONENT "+c+"\n")
@@ -37,7 +43,8 @@ class CompoundImage( val width:Integer, val height:Integer,
 object CompoundImage
 {
 	val CI_LINE        = """^COMPOUND-IMAGE (\d+),(\d+)$""".r
-	val PROMOTE_LINE   = """^PROMOTE (\S+)$""".r
+	val PROMOTE1_LINE   = """^PROMOTE1 (\S+)$""".r
+	val PROMOTE2_LINE   = """^PROMOTE2 (\S+)$""".r
 	val COMPONENT_LINE = """^COMPONENT (\d+),(\d+),(\d+),(\d+) (\S+)$""".r
 	
 	def unserialize( b:ByteBlob ):CompoundImage = {
@@ -45,19 +52,24 @@ object CompoundImage
 		var line = br.readLine()
 		var width,height = 0
 		var components = new ListBuffer[CompoundImageComponent]()
-		var promotedImageUri:String = null
+		var promotedImage1Uri, promotedImage2Uri : String = null
 		while( line != null ) {
 			line match {
 				case CI_LINE(w,h) =>
 					width = w.toInt
 					height = h.toInt
-				case PROMOTE_LINE(uri) =>
-					promotedImageUri = uri
+				case PROMOTE1_LINE(uri) =>
+					promotedImage1Uri = uri
+				case PROMOTE2_LINE(uri) =>
+					promotedImage2Uri = uri
 				case COMPONENT_LINE(x,y,w,h,uri) =>
 					components += new CompoundImageComponent(x.toInt,y.toInt,w.toInt,h.toInt,uri)
 			}
 			line = br.readLine()
 		}
-		new CompoundImage( width, height, components.toList, promotedImageUri )
+		new CompoundImage( width, height, components.toList, promotedImage1Uri, promotedImage2Uri )
 	}
+	
+	implicit def compoundImageAsBlob( i:CompoundImage ):ByteBlob = i.serialize()
+	implicit def blobAsCompoundImage( b:ByteBlob ):CompoundImage = unserialize(b)
 }
