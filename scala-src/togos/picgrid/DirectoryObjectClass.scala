@@ -1,7 +1,14 @@
 package togos.picgrid
 
-class DirectoryObjectClass
+class DirectoryObjectClass( val name:String )
+
 object DirectoryObjectClass
 {
-	val File, Directory = new DirectoryObjectClass() 
+	val Blob      = new DirectoryObjectClass("Blob")
+	val Directory = new DirectoryObjectClass("Directory")
+	
+	def byName( name:String ) = name match {
+		case "Blob" => Blob
+		case "Directory" => Directory
+	}
 }

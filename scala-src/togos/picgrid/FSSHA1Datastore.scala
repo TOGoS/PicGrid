@@ -9,12 +9,16 @@ import togos.picgrid.io.FileBlob
 import togos.picgrid.io.FileUtil.makeParentDirs
 import scala.collection.mutable.ListBuffer
 
-class FSSHA1Datastore( val dir:File ) extends FSDatastore
+class FSSHA1Datastore( val dir:File, val extraReadDirs:List[String]=List() ) extends FSDatastore
 {
+	val readDirs = dir.getPath() :: extraReadDirs
+	
 	val BITPRINT_REGEX = """^urn:bitprint:([^\.]+)\.([^\.]+)$""".r 
 	
+	protected def subSectorPath( sha1:String ) = sha1.substring(0,2) + "/" + sha1 
+	
 	protected def fullPathTo( sha1:String ):File = {
-		new File(dir + "/" + sha1.substring(0,2) + "/" + sha1)
+		new File(dir + "/" + subSectorPath(sha1))
 	}
 	
 	/**
@@ -31,8 +35,12 @@ class FSSHA1Datastore( val dir:File ) extends FSDatastore
 	def apply( fn:String ):ByteBlob = {
 		fn match {
 		case BITPRINT_REGEX(sha1,tt) =>
-			val f = fullPathTo(sha1)
-			if( f.exists ) new FileBlob(f) else null 
+			val sp = subSectorPath(sha1)
+			for( d <- readDirs ) {
+				val f = new File(d + "/" + sp)
+				if( f.exists ) return new FileBlob(f)
+			}
+			return null
 		case _ => null
 		}
 	}
