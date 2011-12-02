@@ -32,17 +32,17 @@ class FSSHA1Datastore( val dir:File, val extraReadDirs:List[String]=List() ) ext
 		new File(dir + "/" + sha1.substring(0,2) + "/." + sha1 + ".temp-" + (Math.random*Integer.MAX_VALUE).toInt )
 	}
 	
-	def apply( fn:String ):ByteBlob = {
-		fn match {
+	def apply( uri:String ):ByteBlob = {
+		uri match {
 		case BITPRINT_REGEX(sha1,tt) =>
 			val sp = subSectorPath(sha1)
 			for( d <- readDirs ) {
 				val f = new File(d + "/" + sp)
 				if( f.exists ) return new FileBlob(f)
 			}
-			return null
-		case _ => null
+		case _ =>
 		}
+		null
 	}
 	
 	/**
@@ -89,7 +89,7 @@ class FSSHA1Datastore( val dir:File, val extraReadDirs:List[String]=List() ) ext
 	/**
 	 * Import an existing temporary file, moving it directly into the repository, returning its URN
 	 */
-	def storeAndDelete( tempFile:File ):String = {
+	def storeAndRemove( tempFile:File ):String = {
 		val fileBlob = new FileBlob(tempFile)
 		val (urn, sha1String) = identify(fileBlob)
 		

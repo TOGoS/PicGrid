@@ -10,11 +10,14 @@ import togos.picgrid.image.ImageInfoExtractor
 import togos.picgrid.image.CompoundImageComponent
 import scala.collection.mutable.ListBuffer
 import java.io.File
+import scala.collection.mutable.HashMap
 
-class Gridifier( val datastore:Datastore, val resizer:ImageMagickResizer )
-{
-	val infoExtractor = new ImageInfoExtractor( datastore )
-	
+class Gridifier(
+	val functionCache:FunctionCache,
+	val datastore:Datastore,
+	val resizer:ImageMagickResizer,
+	val infoExtractor:ImageInfoExtractor
+) {
 	val xRdfSubjectRegex = """x-rdf-subject:(.*)""".r
 	val imageFilenameRegex = """(?i).*\.(?:png|jpe?g|gif|bmp)$""".r
 	
@@ -87,6 +90,10 @@ class Gridifier( val datastore:Datastore, val resizer:ImageMagickResizer )
 	def gridify( uri:String ):CompoundImage = {
 		gridify( getDirEntries( uri ) )
 	}
+	
+	def gridifyAndStore( uri:String ):String = {
+		datastore.store( gridify(uri).serialize() )
+	}
 }
 object Gridifier
 {
@@ -118,8 +125,39 @@ object Gridifier
 			throw new RuntimeException("Must specify a target")
 		}
 		
-		val gridifier = new Gridifier( datastore, new ImageMagickResizer(datastore, "/usr/bin/convert") )
+		class KoolCache {
+			val maps = new HashMap[String,HashMap[String,String]]
+			
+			protected def map( name:String ):HashMap[String,String] = {
+				var m = maps.getOrElse(name,null)
+				if( m == null ) {
+					m = new HashMap()
+					maps(name) = m
+				} 
+				m
+			}
+			
+			def apply( k:(String,String) ):String = {
+				map(k._1).getOrElse(k._2, null)
+			}
+			
+			def update( k:(String,String), v:String ):Unit = {
+				map(k._1)(k._2) = v
+			}
+		}
 		
-		System.out.println( BlobConversions.byteBlobAsString(gridifier.gridify( target ).serialize()) )
+		val functionCache:FunctionCache = new KoolCache //HashMap[(String,String),String]()
+		val imageInfoExtractor = new ImageInfoExtractor( functionCache, datastore )
+		val resizer = new ImageMagickResizer( functionCache, datastore, "/usr/bin/convert" )
+		val gridifier = new Gridifier( functionCache, datastore, resizer, imageInfoExtractor )
+		val gridRenderer = new GridRenderer( functionCache, datastore, imageInfoExtractor, "/usr/bin/convert" )
+		
+		val cimg = gridifier.gridifyAndStore( target )
+		if( cimg == null ) {
+			System.err.println("No images found!")
+			return
+		}
+		
+		System.out.println( "rasterize("+cimg + ") = " + gridRenderer.rasterize( cimg ) )
 	}
 }

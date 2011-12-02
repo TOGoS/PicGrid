@@ -7,10 +7,12 @@ import javax.imageio.ImageIO
 import java.io.FileInputStream
 import javax.imageio.ImageReader
 import togos.picgrid.FSSHA1Datastore
+import togos.picgrid.FunctionCache
+import scala.collection.mutable.HashMap
 
-class ImageMagickResizer( val datastore:FSDatastore, val convertExe:String )
+class ImageMagickResizer( val functionCache:FunctionCache, val datastore:FSDatastore, val convertExe:String )
 {
-	val imageInfoExtractor = new ImageInfoExtractor(datastore)
+	val imageInfoExtractor = new ImageInfoExtractor(functionCache, datastore)
 	
 	def resize( infile:File, newWidth:Integer, newHeight:Integer, outFile:File ):Process = {
 		makeParentDirs( outFile )
@@ -35,7 +37,7 @@ class ImageMagickResizer( val datastore:FSDatastore, val convertExe:String )
 			throw new RuntimeException("convert returned non-zero status: "+imResult)
 		}
 		val len = tempFile.length()
-		return datastore.storeAndDelete( tempFile )
+		return datastore.storeAndRemove( tempFile )
 	}
 }
 object ImageMagickResizer
@@ -69,9 +71,15 @@ object ImageMagickResizer
 			i += 1
 		}
 		
+		val hm = new HashMap[(String,String),String]()
+		hm( ("x","y") ) = "Z"
+		hm.isDefinedAt( ("x","y") )
+		hm( ("x","y") )
+		
+		val functionCache:FunctionCache = new HashMap[(String,String),String]()
 		val datastore = if( datastoreDir == null ) null else new FSSHA1Datastore(datastoreDir)
 		
-		val imr = new ImageMagickResizer( datastore, "/usr/bin/convert" )
+		val imr = new ImageMagickResizer( functionCache, datastore, "/usr/bin/convert" )
 		if( datastore == null ) {
 			if( inFilename == null ) throw new RuntimeException("No input file specified")
 			if( outFile == null ) throw new RuntimeException("No output file specified")
