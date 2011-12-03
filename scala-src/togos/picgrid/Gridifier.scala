@@ -15,6 +15,7 @@ import scala.collection.mutable.HashMap
 import togos.picgrid.image.ImageMagickCropResizer
 import togos.picgrid.image.ImageMagickCommands
 import togos.picgrid.file.FSSHA1Datastore
+import togos.picgrid.file.SLFFunctionCache
 
 class ImageInfo(
 	val uri:String, val sourceUri:String,
@@ -261,16 +262,29 @@ object Gridifier
 	def main( args:Array[String] ) {
 		var datastoreDir:String = null
 		var datasources:ListBuffer[String] = new ListBuffer[String]()
+		var functionCacheDir:String = null
 		var i = 0
 		var target:String = null
 		while( i < args.length ) {
 			args(i) match {
+				case "-convert-path" =>
+					i += 1
+					ImageMagickCommands.convertPath = args(i)
+				case "-function-cache-dir" =>
+					i += 1
+					functionCacheDir = args(i)
 				case "-datastore" =>
 					i += 1
 					datastoreDir = args(i) 
 				case "-datasource" =>
 					i += 1
 					datasources += args(i)
+				case "-ms-datasource" => // Multi-sector datasource (e.g. ccouch/data)
+					i += 1
+					val msd = new File(args(i))
+					for( f <- msd.listFiles() ) if( f.isDirectory() ) {
+						datasources += f.getPath();
+					}
 				case arg if !arg.startsWith("-") =>
 					target = arg
 				case arg => throw new RuntimeException("Unrecognised argument: "+arg)
@@ -286,9 +300,14 @@ object Gridifier
 			throw new RuntimeException("Must specify a target")
 		}
 		
-		val functionCache:FunctionCache = new MemoryFunctionCache()
+		val functionCache:FunctionCache =
+			if( functionCacheDir != null ) {
+				new SLFFunctionCache( new File(functionCacheDir) )
+			} else {
+				new MemoryFunctionCache()
+			}
 		val imageInfoExtractor = new ImageInfoExtractor( functionCache, datastore )
-		val resizer = new ImageMagickCropResizer( functionCache, datastore, ImageMagickCommands.convert )
+		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert )
 		val gridifier = new Gridifier( functionCache, datastore, imageInfoExtractor )
 		val gridRenderer = new GridRenderer( functionCache, datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
 		

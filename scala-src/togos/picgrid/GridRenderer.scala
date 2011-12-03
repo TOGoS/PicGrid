@@ -48,8 +48,8 @@ class GridRenderer(
 		val args = ArrayBuffer[String]( "-size", ci.width + "x" + ci.height, "xc:black" )
 		for( comp <- ci.components ) {
 			val compRasterUri = rasterize(comp.uri)
-			val rasterDims = imageInfoExtractor.getImageDimensions(compRasterUri)
-			val arRat = aspectRatio(rasterDims._1, rasterDims._2) / aspectRatio(comp.w, comp.h) 
+			val (origWidth,origHeight) = imageInfoExtractor.getImageDimensions(compRasterUri)
+			val arRat = aspectRatio(origWidth,origHeight) / aspectRatio(comp.w, comp.h) 
 			val scaledRasterUri =
 				if( arRat >= 0.95 && arRat <= 1.05 ) {
 					compRasterUri

@@ -7,5 +7,5 @@ object ImageMagickCommands
 {
 	var convertPath:String = "/usr/bin/convert"
 	
-	var convert = new CommandLineProgram( Array(convertPath), CommandLineExecutor.instance )
+	def convert = new CommandLineProgram( Array(convertPath), CommandLineExecutor.instance )
 }

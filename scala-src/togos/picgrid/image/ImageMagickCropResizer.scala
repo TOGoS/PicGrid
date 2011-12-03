@@ -16,10 +16,8 @@ import togos.picgrid.MemoryFunctionCache
  * Use this one when you need images converted to an exact size and don't mind
  * the edges being snipped off.
  */
-class ImageMagickCropResizer( val functionCache:FunctionCache, val datastore:FSDatastore, val imConvert:CommandLine )
+class ImageMagickCropResizer( val datastore:FSDatastore, val imConvert:CommandLine )
 {
-	val imageInfoExtractor = new ImageInfoExtractor(functionCache, datastore)
-	
 	def resize( infile:File, newWidth:Integer, newHeight:Integer, outFile:File ):Process = {
 		makeParentDirs( outFile )
 		val args = Array[String](
@@ -86,7 +84,7 @@ object ImageMagickCropResizer
 		val functionCache:FunctionCache = new MemoryFunctionCache()
 		val datastore = if( datastoreDir == null ) null else new FSSHA1Datastore(datastoreDir)
 		
-		val imr = new ImageMagickCropResizer( functionCache, datastore, ImageMagickCommands.convert )
+		val imr = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert )
 		if( datastore == null ) {
 			if( inFilename == null ) throw new RuntimeException("No input file specified")
 			if( outFile == null ) throw new RuntimeException("No output file specified")
