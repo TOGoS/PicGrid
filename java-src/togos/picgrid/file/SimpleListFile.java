@@ -33,12 +33,12 @@ import java.util.Arrays;
  *   'PAIR' - dictionary item
  *   'ENDF' - end of file
  * 
- * index:
- *   [4-byte number of entries (incl. reserved ones)]
- *   [offset of last chunk in file]
- *   [offset to recycle list]
- *   [13 more reserved entries]
- *   [offset to items]
+ * index (index size + 16) * 4 bytes:
+ *    0 [4-byte number of entries (not including the 15 reserved ones)]
+ *    4 [offset of last chunk in file]    \
+ *    8 [offset to recycle list]           } 15 reserved entries
+ *   12 [13 more reserved entries]        /
+ *   60 [offset to items]
  *
  * dictionary item chunk content:
  *   [4-byte length of name]
@@ -123,11 +123,11 @@ public class SimpleListFile {
 	}
 	
 	protected byte[] createIndexData(int numEntries) {
-		byte[] dat = new byte[(numEntries+RESERVED_INDEX_ITEMS)*4 + 4];
+		byte[] dat = new byte[numEntries*4 + 4];
 		intToBytes(numEntries, dat, 0);
 		return dat;
 	}
-
+	
 	protected void initr(File file, String mode) throws IOException {
 		this.file = file;
 		this.raf = new RandomAccessFile(file, mode);
@@ -137,7 +137,7 @@ public class SimpleListFile {
 			this.indexSize = getIntAt(INDEX_SIZE_OFFSET);
 		}
 	}
-
+	
 	public void initIfEmpty(int indexSize, int fileSize) throws IOException {
 		if( this.raf.length() <= HEADER_LENGTH ) {
 			this.indexSize = indexSize;
@@ -146,7 +146,7 @@ public class SimpleListFile {
 			Chunk indexChunk = new Chunk();
 			indexChunk.offset = INDEX_CHUNK_OFFSET;
 			indexChunk.type = CHUNK_TYPE_INDX;
-			writeChunk(indexChunk, createIndexData(indexSize+RESERVED_INDEX_ITEMS));
+			writeChunk(indexChunk, createIndexData(indexSize));
 			Chunk eofChunk = writeEofChunk(indexChunk.offset);
 			setLastChunkOffset(eofChunk.offset);
 		}

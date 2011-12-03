@@ -24,7 +24,9 @@ class SLFFunctionCache( val cacheDir:File )
 	def apply( cacheName:String, key:String ):String = {
 		val slf = getSlf( cacheName, false )
 		if( slf == null ) return null
-		new String( slf.get( key ), "UTF-8" )
+		val bytes = slf.get( key )
+		if( bytes == null ) return null
+		new String( bytes, "UTF-8" )
 	}
 	
 	def update( cacheName:String, key:String, v:String ) {
