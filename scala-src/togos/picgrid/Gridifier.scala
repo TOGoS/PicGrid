@@ -108,6 +108,8 @@ class Gridifier(
 		def update( x:Integer, y:Integer, v:Boolean ) { data(x + y*width) = v }
 		
 		def spotIsOpen( x:Integer, y:Integer, w:Integer, h:Integer ):Boolean = {
+			if( x+w >= width || y+h >= height ) return false
+			
 			var cy = 0
 			while( cy < h ) {
 				var cx = 0
@@ -163,13 +165,13 @@ class Gridifier(
 	
 	def quantize( i:ImageInfo, scale:Double ):(Integer,Integer) = {
 		if( i.width >= i.height ) {
-			var w = Math.round(i.width / i.height * scale * 3).toInt
+			var w = Math.round(i.width.toFloat / i.height * scale * 3).toInt
 			if( w < 1 ) w = 1
 			var h = Math.round(scale).toInt
 			if( h < 1 ) h = 1
 			return (w,h)
 		} else {
-			var h = Math.round(i.height / i.width * scale).toInt
+			var h = Math.round(i.height.toFloat / i.width * scale).toInt
 			if( h < 1 ) h = 1
 			var w = Math.round(scale * 3).toInt
 			if( w < 1 ) w = 1
@@ -179,8 +181,30 @@ class Gridifier(
 	
 	def computeScale( i:ImageInfo ):Double = {
 		var scale = Math.log( i.totalImageCount.toDouble )/3
-		if( scale <= 1 ) scale = 1
+		if( scale < 1 ) scale = 1
 		scale
+	}
+	
+	val cellWidth = 32
+	val cellHeight = 104
+	val cellSpacing = 4
+
+	def fitAll( images:List[ImageEntry], bitmapWidth:Integer, bitmapHeight:Integer ):List[CompoundImageComponent] = {
+		val bitmap = new Bitmap( bitmapWidth, bitmapHeight )
+		val components = new ListBuffer[CompoundImageComponent]
+		for( e <- images ) {
+			val i = e.info
+			val (cellsWide,cellsTall) = quantize(i, computeScale(i))
+			val loc = bitmap.findOpenSpot( cellsWide, cellsTall )
+			if( loc == null ) return null
+			bitmap.markSpotUsed( loc._1, loc._2, cellsWide, cellsTall )
+			val cx = (cellWidth + cellSpacing) * loc._1
+			val cw = cellWidth * cellsWide + cellSpacing * (cellsWide - 1)
+			val cy = (cellHeight + cellSpacing) * loc._2
+			val ch = cellHeight * cellsTall + cellSpacing * (cellsTall - 1)
+			components += new CompoundImageComponent( cx, cy, cw, ch, i.uri, e.name )
+		}
+		return components.toList
 	}
 	
 	def gridify( images:List[ImageEntry], generatedFromUri:String ):ImageInfo = {
@@ -215,35 +239,19 @@ class Gridifier(
 		// double scale image takes 2 lines, etc
 		// bitmap is arranged rows-first
 		
-		val cellWidth = 32
-		val cellHeight = 78
-		val cellSpacing = 4
+		var bitmapWidth:Integer = Math.round(outerWidth)*3 toInt
+		var bitmapHeight:Integer = Math.round(outerHeight) toInt
 		
-		val bitmapWidth:Integer = Math.round(outerWidth)*3 toInt
-		val bitmapHeight:Integer = Math.round(outerHeight*2) toInt // *2 for something
-		val bitmap = new Bitmap( bitmapWidth, bitmapHeight )
-		val components = new ListBuffer[CompoundImageComponent]
-		for( e <- images ) {
-			val i = e.info
-			val compSize = quantize(i, computeScale(i))
-			val loc = bitmap.findOpenSpot( compSize._1, compSize._2 )
-			if( loc == null ) {
-				throw new Exception("Couldn't fit "+compSize._1+"x"+compSize._2+" component into "+bitmapWidth+"x"+bitmapHeight+" bitmap\n"+bitmap)
-			}
-			bitmap.markSpotUsed( loc._1, loc._2, compSize._1, compSize._2 )
-			val cx = (cellWidth + cellSpacing) * loc._1
-			val cw = cellWidth * compSize._1 + cellSpacing * (compSize._1 - 1)
-			val cy = (cellHeight + cellSpacing) * loc._2
-			val ch = cellHeight * compSize._2 + cellSpacing * (compSize._2 - 1)
-			components += new CompoundImageComponent( cx, cy, cw, ch, i.uri, e.name )
+		var components = fitAll( images, bitmapWidth, bitmapHeight )
+		while( components == null ) {
+			bitmapHeight += 1
+			components = fitAll( images, bitmapWidth, bitmapHeight )
 		}
 		
 		val resultWidth = bitmapWidth * cellWidth + (bitmapWidth-1) * cellSpacing
 		val resultHeight = bitmapHeight * cellHeight + (bitmapHeight-1) * cellSpacing
 		
 		val ci = new CompoundImage( resultWidth, resultHeight, components, null, null, totalImageCount, generatedFromUri )
-		
-		System.err.println("Fit "+images.length+" images into "+totalArea)
 		
 		val uri = datastore.store( ci.serialize() )
 		new ImageInfo( uri, generatedFromUri, ci.width, ci.height, ci.totalImageCount )
