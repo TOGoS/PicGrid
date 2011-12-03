@@ -14,6 +14,7 @@ import java.io.File
 import scala.collection.mutable.HashMap
 import togos.picgrid.image.ImageMagickCropResizer
 import togos.picgrid.image.ImageMagickCommands
+import togos.picgrid.file.FSSHA1Datastore
 
 class ImageInfo(
 	val uri:String, val sourceUri:String,
@@ -285,28 +286,7 @@ object Gridifier
 			throw new RuntimeException("Must specify a target")
 		}
 		
-		class KoolCache {
-			val maps = new HashMap[String,HashMap[String,String]]
-			
-			protected def map( name:String ):HashMap[String,String] = {
-				var m = maps.getOrElse(name,null)
-				if( m == null ) {
-					m = new HashMap()
-					maps(name) = m
-				} 
-				m
-			}
-			
-			def apply( k:(String,String) ):String = {
-				map(k._1).getOrElse(k._2, null)
-			}
-			
-			def update( k:(String,String), v:String ):Unit = {
-				map(k._1)(k._2) = v
-			}
-		}
-		
-		val functionCache:FunctionCache = new KoolCache //HashMap[(String,String),String]()
+		val functionCache:FunctionCache = new MemoryFunctionCache()
 		val imageInfoExtractor = new ImageInfoExtractor( functionCache, datastore )
 		val resizer = new ImageMagickCropResizer( functionCache, datastore, ImageMagickCommands.convert )
 		val gridifier = new Gridifier( functionCache, datastore, imageInfoExtractor )

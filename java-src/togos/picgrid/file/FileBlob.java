@@ -1,4 +1,4 @@
-package togos.picgrid.io;
+package togos.picgrid.file;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import togos.mf.value.ByteBlob;
 import togos.picgrid.BlobUtil;
+import togos.picgrid.io.InputStreamChunkIterator;
 
 public class FileBlob implements ByteBlob
 {

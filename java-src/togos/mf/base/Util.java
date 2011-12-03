@@ -2,11 +2,6 @@ package togos.mf.base;
 
 import java.io.UnsupportedEncodingException;
 
-/*
-import togos.mf.api.Message;
-import togos.mf.api.Request;
-import togos.mf.api.Response;
-*/
 import togos.mf.value.ByteChunk;
 
 public class Util

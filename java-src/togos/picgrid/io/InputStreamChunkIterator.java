@@ -7,7 +7,7 @@ import java.util.Iterator;
 
 import togos.mf.base.SimpleByteChunk;
 
-class InputStreamChunkIterator implements Iterator, Closeable
+public class InputStreamChunkIterator implements Iterator, Closeable
 {
 	InputStream is;
 	boolean eofReached;

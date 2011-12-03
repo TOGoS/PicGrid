@@ -1,5 +1,7 @@
-package togos.picgrid
+package togos.picgrid.file
+
 import java.io.File
+import togos.picgrid.Datastore
 
 /**
  * A datastore that can import files directly, possibly
@@ -8,7 +10,7 @@ import java.io.File
 trait FSDatastore extends Datastore
 {
 	/**
-	 * Return a new temporary file, preferrably on the same
+	 * Return a new temporary file, preferably on the same
 	 * filesystem as the repository.
 	 */
 	def tempFile( ext:String="" ):File

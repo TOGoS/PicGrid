@@ -1,8 +1,8 @@
 package togos.picgrid;
 
+import junit.framework.TestCase;
 import togos.mf.base.SimpleByteChunk;
 import togos.mf.value.ByteBlob;
-import junit.framework.TestCase;
 
 public class BlobUtilTest extends TestCase
 {

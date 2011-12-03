@@ -1,13 +1,13 @@
-package togos.picgrid
+package togos.picgrid.file
 
 import java.io.File
 import java.io.FileOutputStream
 import org.bitpedia.util.Base32
 import togos.mf.value.ByteBlob
 import togos.mf.value.ByteChunk
-import togos.picgrid.io.FileBlob
-import togos.picgrid.io.FileUtil.makeParentDirs
+import togos.picgrid.file.FileUtil.makeParentDirs
 import scala.collection.mutable.ListBuffer
+import togos.picgrid.BitprintDigest
 
 class FSSHA1Datastore( val dir:File, val extraReadDirs:List[String]=List() ) extends FSDatastore
 {

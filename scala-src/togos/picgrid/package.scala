@@ -14,8 +14,8 @@ package object picgrid
 	*/
 	
 	type FunctionCache = {
-		def apply( k:(String,String) ):String
-		def update( k:(String,String), v:String ):Unit
+		def apply( cacheName:String, key:String ):String
+		def update( cacheName:String, key:String, v:String ):Unit
 	}
 	
 	type Encoder[Decoded,Encoded] = {

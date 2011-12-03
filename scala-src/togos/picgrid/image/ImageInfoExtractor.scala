@@ -16,14 +16,14 @@ class ImageInfoExtractor( val functionCache:FunctionCache, val datastore:Datasou
 {
 	var dimensionCache = new Function[String,(Integer,Integer)] {
 		def apply( uri:String ):(Integer,Integer) = {
-			val str = functionCache( ("image-dimensions", uri) )
+			val str = functionCache( "image-dimensions", uri )
 			if( str == null ) return null
 			val parts = str.split(',')
 			(parts(0).toInt, parts(1).toInt)
 		}
 		
 		def update( uri:String, dims:(Integer,Integer) ) {
-			functionCache( ("image-dimensions", uri) ) = dims._1 + "," + dims._2
+			functionCache( "image-dimensions", uri ) = dims._1 + "," + dims._2
 		}
 	}
 	

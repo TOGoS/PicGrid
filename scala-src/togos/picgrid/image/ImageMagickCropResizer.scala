@@ -1,16 +1,16 @@
 package togos.picgrid.image
 
 import java.io.File
-import togos.picgrid.FSDatastore
-import togos.picgrid.io.FileUtil.makeParentDirs
-import togos.picgrid.io.FileBlob
-import javax.imageio.ImageIO
-import java.io.FileInputStream
-import javax.imageio.ImageReader
-import togos.picgrid.FSSHA1Datastore
-import togos.picgrid.FunctionCache
+
 import scala.collection.mutable.HashMap
+
+import togos.picgrid.file.FileUtil.makeParentDirs
+import togos.picgrid.file.FSDatastore
+import togos.picgrid.file.FSSHA1Datastore
+import togos.picgrid.file.FileBlob
+import togos.picgrid.FunctionCache
 import togos.picgrid.CommandLine
+import togos.picgrid.MemoryFunctionCache
 
 /**
  * Use this one when you need images converted to an exact size and don't mind
@@ -83,7 +83,7 @@ object ImageMagickCropResizer
 		hm.isDefinedAt( ("x","y") )
 		hm( ("x","y") )
 		
-		val functionCache:FunctionCache = new HashMap[(String,String),String]()
+		val functionCache:FunctionCache = new MemoryFunctionCache()
 		val datastore = if( datastoreDir == null ) null else new FSSHA1Datastore(datastoreDir)
 		
 		val imr = new ImageMagickCropResizer( functionCache, datastore, ImageMagickCommands.convert )

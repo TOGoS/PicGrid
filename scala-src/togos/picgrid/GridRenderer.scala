@@ -1,11 +1,14 @@
 package togos.picgrid
 
+import java.io.FileNotFoundException
+
+import scala.collection.mutable.ArrayBuffer
+
+import togos.picgrid.file.FSDatastore
+import togos.picgrid.file.FileBlob
+import togos.picgrid.image.CompoundImage
 import togos.picgrid.image.ImageFormat
 import togos.picgrid.image.ImageInfoExtractor
-import togos.picgrid.image.CompoundImage
-import scala.collection.mutable.ArrayBuffer
-import togos.picgrid.io.FileBlob
-import java.io.FileNotFoundException
 
 class GridRenderer(
 	val functionCache:FunctionCache,
@@ -21,10 +24,10 @@ class GridRenderer(
 		}
 		if( imageType.isRaster ) return imageUri
 		if( imageType == ImageFormat.COMPOSITE ) {
-			var rasterizedUri = functionCache( ("rasterize", imageUri) )
+			var rasterizedUri = functionCache( "rasterize", imageUri )
 			if( rasterizedUri == null ) {
 				rasterizedUri = rasterize( CompoundImage.unserialize( datastore( imageUri ) ) )
-				functionCache( ("rasterize", imageUri) ) = rasterizedUri
+				functionCache( "rasterize", imageUri ) = rasterizedUri
 			}
 			return rasterizedUri
 		}
