@@ -11,11 +11,12 @@ import togos.picgrid.image.CompoundImageComponent
 import scala.collection.mutable.ListBuffer
 import java.io.File
 import scala.collection.mutable.HashMap
+import togos.picgrid.image.ImageMagickCropResizer
+import togos.picgrid.image.ImageMagickCommands
 
 class Gridifier(
 	val functionCache:FunctionCache,
 	val datastore:Datastore,
-	val resizer:ImageMagickResizer,
 	val infoExtractor:ImageInfoExtractor
 ) {
 	val xRdfSubjectRegex = """x-rdf-subject:(.*)""".r
@@ -42,19 +43,14 @@ class Gridifier(
 				case _ => null
 			}
 			case DirectoryObjectClass.Directory =>
-				gridify( getDirEntries( e.targetUri ) )
+				gridifyDir( getDirEntries( e.targetUri ) )
 		}
 	}
 	
-	def gridify( dir:List[DirectoryEntry] ):CompoundImage = {
-		val sortedImages = dir.map( e => gridify(e) ).filter( i => i != null )
-		if( sortedImages.length == 0 ) return null
-		if( sortedImages.length == 1 ) return sortedImages.head
-		// TODO use promoted images somehow
+	def gridify( images:List[CompoundImage], imagesPerRow:Integer ):CompoundImage = {
 		var rows = ListBuffer[List[CompoundImage]]()
-		val imagesPerRow = Math.sqrt(sortedImages.length) * 4 / 3
 		var row = ListBuffer[CompoundImage]()
-		for( i <- sortedImages ) {
+		for( i <- images ) {
 			if(row.length > imagesPerRow ) {
 				rows += row.toList
 				row = ListBuffer[CompoundImage]()
@@ -84,15 +80,28 @@ class Gridifier(
 			y += rowHeight + spacing
 		}
 		
-		new CompoundImage( totalWidth, y - spacing, components, null, null )
+		new CompoundImage( totalWidth, y - spacing, components, null, null )		
 	}
 	
-	def gridify( uri:String ):CompoundImage = {
-		gridify( getDirEntries( uri ) )
+	def gridify( images:List[CompoundImage] ):CompoundImage = {
+		if( images.length == 0 ) return null
+		if( images.length == 1 ) return images.head
+		
+		// TODO use promoted images somehow
+		
+		gridify( images, Math.sqrt(images.length).toInt )
 	}
 	
-	def gridifyAndStore( uri:String ):String = {
-		datastore.store( gridify(uri).serialize() )
+	def gridifyDir( dir:List[DirectoryEntry] ):CompoundImage = {
+		gridify( dir.map( e => gridify(e) ).filter( i => i != null ) )
+	}
+	
+	def gridifyDir( uri:String ):CompoundImage = {
+		gridifyDir( getDirEntries( uri ) )
+	}
+	
+	def gridifyDirAndStore( uri:String ):String = {
+		datastore.store( gridifyDir(uri).serialize() )
 	}
 }
 object Gridifier
@@ -148,11 +157,11 @@ object Gridifier
 		
 		val functionCache:FunctionCache = new KoolCache //HashMap[(String,String),String]()
 		val imageInfoExtractor = new ImageInfoExtractor( functionCache, datastore )
-		val resizer = new ImageMagickResizer( functionCache, datastore, "/usr/bin/convert" )
-		val gridifier = new Gridifier( functionCache, datastore, resizer, imageInfoExtractor )
-		val gridRenderer = new GridRenderer( functionCache, datastore, imageInfoExtractor, "/usr/bin/convert" )
+		val resizer = new ImageMagickCropResizer( functionCache, datastore, ImageMagickCommands.convert )
+		val gridifier = new Gridifier( functionCache, datastore, imageInfoExtractor )
+		val gridRenderer = new GridRenderer( functionCache, datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
 		
-		val cimg = gridifier.gridifyAndStore( target )
+		val cimg = gridifier.gridifyDirAndStore( target )
 		if( cimg == null ) {
 			System.err.println("No images found!")
 			return

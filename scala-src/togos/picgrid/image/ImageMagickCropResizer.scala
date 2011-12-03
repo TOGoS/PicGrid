@@ -1,4 +1,5 @@
 package togos.picgrid.image
+
 import java.io.File
 import togos.picgrid.FSDatastore
 import togos.picgrid.io.FileUtil.makeParentDirs
@@ -11,7 +12,11 @@ import togos.picgrid.FunctionCache
 import scala.collection.mutable.HashMap
 import togos.picgrid.CommandLine
 
-class ImageMagickResizer( val functionCache:FunctionCache, val datastore:FSDatastore, val imConvert:CommandLine )
+/**
+ * Use this one when you need images converted to an exact size and don't mind
+ * the edges being snipped off.
+ */
+class ImageMagickCropResizer( val functionCache:FunctionCache, val datastore:FSDatastore, val imConvert:CommandLine )
 {
 	val imageInfoExtractor = new ImageInfoExtractor(functionCache, datastore)
 	
@@ -19,12 +24,14 @@ class ImageMagickResizer( val functionCache:FunctionCache, val datastore:FSDatas
 		makeParentDirs( outFile )
 		val args = Array[String](
 			infile.getPath(),
-			"-thumbnail",(newWidth+"x"+newHeight+">"),
+			"-thumbnail",(newWidth+"x"+newHeight+"^"),
+			"-gravity","Center",
+			"-extent",(newWidth+"x"+newHeight),
 			"-quality","85",
 			outFile.getPath()
 		)
 		
-		imConvert.start(args)
+		imConvert.start(args);
 	}
 	
 	def resize( origUri:String, boxWidth:Integer, boxHeight:Integer ):String = {
@@ -40,7 +47,7 @@ class ImageMagickResizer( val functionCache:FunctionCache, val datastore:FSDatas
 		return datastore.storeAndRemove( tempFile )
 	}
 }
-object ImageMagickResizer
+object ImageMagickCropResizer
 {
 	def main( args:Array[String] ) {
 		var datastoreDir:File = null
@@ -79,7 +86,7 @@ object ImageMagickResizer
 		val functionCache:FunctionCache = new HashMap[(String,String),String]()
 		val datastore = if( datastoreDir == null ) null else new FSSHA1Datastore(datastoreDir)
 		
-		val imr = new ImageMagickResizer( functionCache, datastore, ImageMagickCommands.convert )
+		val imr = new ImageMagickCropResizer( functionCache, datastore, ImageMagickCommands.convert )
 		if( datastore == null ) {
 			if( inFilename == null ) throw new RuntimeException("No input file specified")
 			if( outFile == null ) throw new RuntimeException("No output file specified")
@@ -87,7 +94,7 @@ object ImageMagickResizer
 			imr.resize( new File(inFilename), w, h, outFile )
 		} else {
 			val thumbUri = imr.resize( inFilename, w, h )
-			System.out.println( "Resize result = "+thumbUri )
+			System.out.println( "Resize+crop result = "+thumbUri )
 		}
 	}
 }

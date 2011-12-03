@@ -22,4 +22,8 @@ package object picgrid
 		def apply[Decoded]( i:Decoded ):Encoded
 		def unapply[Encoded]( i:Encoded ):Option[Decoded]
 	}
+	
+	type ImageResizer = {
+		def resize( origUri:String, boxWidth:Integer, boxHeight:Integer ):String
+	}
 }

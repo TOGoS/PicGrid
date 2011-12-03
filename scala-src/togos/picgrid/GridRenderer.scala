@@ -11,7 +11,8 @@ class GridRenderer(
 	val functionCache:FunctionCache,
 	val datastore:FSDatastore,
 	val imageInfoExtractor:ImageInfoExtractor,
-	val convertExe:String
+	val resizer:ImageResizer,
+	val imConvert:CommandLine
 ) {
 	def rasterize( imageUri:String ):String = {
 		val imageType = imageInfoExtractor.getImageType(imageUri)
@@ -30,6 +31,8 @@ class GridRenderer(
 		throw new Exception("Don't know how to rasterize image type: "+imageType)
 	}
 	
+	def aspectRatio( w:Integer, h:Integer ) = w.toFloat / h
+	
 	def rasterize( ci:CompoundImage ):String = {
 		if( ci.components.length == 1 ) {
 			return rasterize( ci.components.head.uri )
@@ -39,9 +42,16 @@ class GridRenderer(
 		
 		// http://www.imagemagick.org/Usage/layers/
 		
-		val args = ArrayBuffer[String]( convertExe, "-size", ci.width + "x" + ci.height, "xc:black" )
+		val args = ArrayBuffer[String]( "-size", ci.width + "x" + ci.height, "xc:black" )
 		for( comp <- ci.components ) {
 			val compRasterUri = rasterize(comp.uri)
+			val rasterDims = imageInfoExtractor.getImageDimensions(compRasterUri)
+			val scaledRasterUri =
+				if( aspectRatio(rasterDims._1, rasterDims._2) == aspectRatio(comp.w, comp.h) ) {
+					compRasterUri
+				} else {
+					resizer.resize( compRasterUri, comp.w, comp.h )
+				}
 			val compRasterBlob = datastore(compRasterUri)
 			if( compRasterBlob != null && compRasterBlob.isInstanceOf[FileBlob] ) {
 				val compRasterFile = compRasterBlob.asInstanceOf[FileBlob].getFile()
@@ -53,13 +63,7 @@ class GridRenderer(
 		}
 		args += destFile.getPath()
 		
-		System.err.print("$")
-		for( arg <- args ) {
-			System.err.print(" \""+arg+"\"")
-		}
-		System.err.println()
-		
-		val res = Runtime.getRuntime().exec(args.toArray[String]).waitFor()
+		val res = imConvert.run(args.toArray[String])
 		if( res != 0 ) {
 			throw new Exception("convert returned non-zero status!")
 		}
