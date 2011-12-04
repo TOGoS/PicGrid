@@ -25,40 +25,14 @@ class ImageInfo(
 
 class ImageEntry( val name:String, val info:ImageInfo )
 
-class Gridifier(
-	val functionCache:FunctionCache,
-	val datastore:Datastore,
-	val infoExtractor:ImageInfoExtractor
-) {
-	val xRdfSubjectRegex = """x-rdf-subject:(.*)""".r
-	val imageFilenameRegex = """(?i).*\.(?:png|jpe?g|gif|bmp)$""".r
-	
-	def getDirEntries( uri:String ):List[DirectoryEntry] = {
-		val xRdfSubjectRegex(blobUri) = uri
-		val rdfBlob = datastore(blobUri)
-		RDFDirectoryParser.parseDirectory( rdfBlob )
-	}
-	
-	def gridifySingleImage( uri:String ):ImageInfo = {
-		val dims = infoExtractor.getImageDimensions( uri )
-		if( dims == null ) return null
-		val (w,h) = dims
-		new ImageInfo( uri, uri, w, h, 1 )
-	}
-	
-	def gridify( e:DirectoryEntry ):ImageEntry = {
-		val info = e.targetClass match {
-			case DirectoryObjectClass.Blob => e.name match {
-				case imageFilenameRegex() => gridifySingleImage(e.targetUri)
-				case _ => null
-			}
-			case DirectoryObjectClass.Directory =>
-				gridifyDir( e.targetUri )
-		}
-		new ImageEntry( e.name, info )
-	}
-	
-	def gridify( images:List[ImageEntry], imagesPerRow:Integer, generatedFromUri:String ):CompoundImage = {
+trait GridificationMethod
+{
+	def gridify( images:List[ImageEntry] ):List[CompoundImageComponent]
+}
+
+class RowlyGridificationMethod extends GridificationMethod
+{
+	def gridifyRows( images:List[ImageEntry], imagesPerRow:Integer ):List[CompoundImageComponent] = {
 		var rows = ListBuffer[List[ImageEntry]]()
 		var row = ListBuffer[ImageEntry]()
 		for( i <- images ) {
@@ -94,13 +68,115 @@ class Gridifier(
 			y += rowHeight + spacing
 		}
 		
-		new CompoundImage(
-			totalWidth, y - spacing, components, null, null,
-			totalImageCount, generatedFromUri )
+		components.toList
 	}
 	
-	// 
+	def gridifyColumns( images:List[ImageEntry], imagesPerColumn:Integer ):List[CompoundImageComponent] = {
+		var columns = ListBuffer[List[ImageEntry]]()
+		var column = ListBuffer[ImageEntry]()
+		for( i <- images ) {
+			if(column.length > imagesPerColumn ) {
+				columns += column.toList
+				column = ListBuffer[ImageEntry]()
+			}
+			column += i
+		}
+		if( column.length > 0 ) columns += column.toList
+		
+		val components = ListBuffer[CompoundImageComponent]()
+		var totalHeight = 1024
+		var totalImageCount = 0
+		var spacing = 4
+		var x = 0
+		for( column <- columns ) {
+			var imageSpaceAvailable = totalHeight - (column.length - 1) * spacing
+			var imageHeightRatio = 0f // sum(h/w)
+			for( e <- column ) {
+				val i = e.info
+				imageHeightRatio += i.height.toFloat / i.width
+			}
+			val rowWidth = (imageSpaceAvailable / imageHeightRatio).toInt
+			var y = 0
+			for( e <- column ) {
+				val i = e.info
+				val cellHeight = i.height * rowWidth / i.width
+				components += new CompoundImageComponent( x, y, rowWidth, cellHeight, i.uri, e.name )
+				y += cellHeight + spacing
+				totalImageCount += i.totalImageCount
+			}
+			x += rowWidth + spacing
+		}
+		
+		components.toList
+	}
 	
+	def aspectRatio( components:List[CompoundImageComponent] ):Double = {
+		var width, height = 0
+		for( c <- components ) {
+			if( c.x + c.width  > width  ) width  = c.x + c.width
+			if( c.y + c.height > height ) height = c.y + c.height
+		}
+		width.toDouble / height
+	}
+	
+	val aspectRatioPower = 2
+	val aspectRatioWeight = 2
+	val componentAreaRatioPower = 2
+	val componentAreaRatioWeight = 1
+	
+	def aspectRatioFitness( components:List[CompoundImageComponent] ):Double = {
+		val ar = aspectRatio( components )
+		var dist = 1.2 / ar;
+		if( dist < 1 ) dist = 1 / dist
+		- Math.pow( dist, aspectRatioPower ) * aspectRatioWeight
+		
+		/*
+		if( ar > 2.0 ) return (1.6 - ar)/1.0
+		if( ar > 1.6 ) return (1.6 - ar)/1.6
+		if( ar < 0.7 ) return (ar - 0.7)/0.7
+		if( ar < 0.5 ) return (ar - 0.7)/0.1
+		return 0
+		*/
+	}
+	
+	def componentAreaRatioFitness( components:List[CompoundImageComponent] ):Double = {
+		var smallestArea = Integer.MAX_VALUE
+		var largestArea = 0
+		for( c <- components ) {
+			val area = c.width * c.height
+			if( area < smallestArea ) smallestArea = area
+			if( area > largestArea ) largestArea = area
+		}
+		- Math.pow( largestArea.toDouble / smallestArea, componentAreaRatioPower ) * componentAreaRatioWeight
+	}
+	
+	def fitness( components:List[CompoundImageComponent] ):Double = {
+		aspectRatioFitness( components ) + componentAreaRatioFitness( components )
+	}
+	
+	def gridify( images:List[ImageEntry] ):List[CompoundImageComponent] = {
+		var bestFitness = Double.NegativeInfinity
+		var bestResult:List[CompoundImageComponent] = null
+		var numRows = Math.sqrt(images.length).toInt - 3
+		if( numRows < 1 ) numRows = 1
+		var i = 0
+		while( i < 6 ) {
+			val results = List(gridifyRows( images, numRows + i ), gridifyColumns( images, numRows + i ))
+			for( result <- results ) {
+				val fit = fitness( result )
+				if( fit > bestFitness ) {
+					bestResult = result
+					bestFitness = fit
+				}
+			}
+			i += 1
+		}
+		bestResult
+	}
+}
+
+class BitmapGridificationMethod extends GridificationMethod
+{
 	class Bitmap( val width:Integer, val height:Integer ) {
 		val data = new Array[Boolean]( width*height )
 		
@@ -206,11 +282,8 @@ class Gridifier(
 		}
 		return components.toList
 	}
-	
-	def gridify( images:List[ImageEntry], generatedFromUri:String ):ImageInfo = {
-		if( images.length == 0 ) return null
-		if( images.length == 1 ) return images.head.info
 		
+	def gridify( images:List[ImageEntry] ):List[CompoundImageComponent] = {
 		var totalWidth :Double = 0
 		var totalHeight:Double = 0
 		var totalArea  :Double = 0
@@ -251,11 +324,65 @@ class Gridifier(
 		val resultWidth = bitmapWidth * cellWidth + (bitmapWidth-1) * cellSpacing
 		val resultHeight = bitmapHeight * cellHeight + (bitmapHeight-1) * cellSpacing
 		
-		val ci = new CompoundImage( resultWidth, resultHeight, components, null, null, totalImageCount, generatedFromUri )
+		components
+	}	
+}
+
+class Gridifier(
+	val functionCache:FunctionCache,
+	val datastore:Datastore,
+	val infoExtractor:ImageInfoExtractor,
+	val gridificationMethod:GridificationMethod
+) {
+	val xRdfSubjectRegex = """x-rdf-subject:(.*)""".r
+	val imageFilenameRegex = """(?i).*\.(?:png|jpe?g|gif|bmp)$""".r
+	
+	def getDirEntries( uri:String ):List[DirectoryEntry] = {
+		val xRdfSubjectRegex(blobUri) = uri
+		val rdfBlob = datastore(blobUri)
+		RDFDirectoryParser.parseDirectory( rdfBlob )
+	}
+	
+	def gridifySingleImage( uri:String ):ImageInfo = {
+		val dims = infoExtractor.getImageDimensions( uri )
+		if( dims == null ) return null
+		val (w,h) = dims
+		new ImageInfo( uri, uri, w, h, 1 )
+	}
+	
+	def gridify( e:DirectoryEntry ):ImageEntry = {
+		val info = e.targetClass match {
+			case DirectoryObjectClass.Blob => e.name match {
+				case imageFilenameRegex() => gridifySingleImage(e.targetUri)
+				case _ => null
+			}
+			case DirectoryObjectClass.Directory =>
+				gridifyDir( e.targetUri )
+		}
+		new ImageEntry( e.name, info )
+	}
+	
+	def gridify( images:List[ImageEntry], generatedFromUri:String ):ImageInfo = {
+		if( images.length == 0 ) return null
+		if( images.length == 1 ) return images.head.info
+		
+		val components = gridificationMethod.gridify( images )
+		
+		var totalImageCount = 0
+		for( image <- images ) totalImageCount += image.info.totalImageCount
+		
+		var width, height = 0
+		for( c <- components ) {
+			if( c.x + c.width  > width  ) width  = c.x + c.width
+			if( c.y + c.height > height ) height = c.y + c.height
+		}
+		
+		val ci = new CompoundImage( width, height, components, null, null, totalImageCount, generatedFromUri )
 		
 		val uri = datastore.store( ci.serialize() )
 		new ImageInfo( uri, generatedFromUri, ci.width, ci.height, ci.totalImageCount )
 	}
+	
 	
 	def gridifyDir( dir:List[DirectoryEntry], generatedFromUri:String ):ImageInfo = {
 		gridify( dir.map( e => gridify(e) ).filter( i => i != null ), generatedFromUri )
@@ -316,7 +443,8 @@ object Gridifier
 			}
 		val imageInfoExtractor = new ImageInfoExtractor( functionCache, datastore )
 		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert )
-		val gridifier = new Gridifier( functionCache, datastore, imageInfoExtractor )
+		val gridificationMethod = new RowlyGridificationMethod
+		val gridifier = new Gridifier( functionCache, datastore, imageInfoExtractor, gridificationMethod )
 		val gridRenderer = new GridRenderer( functionCache, datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
 		
 		val cimg = gridifier.gridifyDir( target )

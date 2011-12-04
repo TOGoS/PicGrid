@@ -11,11 +11,11 @@ import java.util.ArrayList
 import scala.collection.mutable.ListBuffer
 
 class CompoundImageComponent(
-	val x:Integer, val y:Integer, val w:Integer, val h:Integer,
+	val x:Integer, val y:Integer, val width:Integer, val height:Integer,
 	val uri:String, val name:String
 ) {
 	override def toString():String = {
-		x+","+y+","+w+","+h+" "+uri+" name='"+name+"'"
+		x+","+y+","+width+","+height+" "+uri+" name='"+name+"'"
 	}
 }
 

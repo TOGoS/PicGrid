@@ -49,18 +49,18 @@ class GridRenderer(
 		for( comp <- ci.components ) {
 			val compRasterUri = rasterize(comp.uri)
 			val (origWidth,origHeight) = imageInfoExtractor.getImageDimensions(compRasterUri)
-			val arRat = aspectRatio(origWidth, origHeight) / aspectRatio(comp.w, comp.h) 
+			val arRat = aspectRatio(origWidth, origHeight) / aspectRatio(comp.width, comp.height) 
 			val scaledRasterUri =
 				if( arRat >= 0.95 && arRat <= 1.05 ) {
 					compRasterUri
 				} else {
-					resizer.resize( compRasterUri, comp.w, comp.h )
+					resizer.resize( compRasterUri, comp.width, comp.height )
 				}
 			val compRasterBlob = datastore(scaledRasterUri)
 			if( compRasterBlob != null && compRasterBlob.isInstanceOf[FileBlob] ) {
 				val compRasterFile = compRasterBlob.asInstanceOf[FileBlob].getFile()
 				args += "-draw"
-				args += "image over "+comp.x+","+comp.y+" "+comp.w+","+comp.h+" '"+compRasterFile+"'"
+				args += "image over "+comp.x+","+comp.y+" "+comp.width+","+comp.height+" '"+compRasterFile+"'"
 			} else {
 				throw new FileNotFoundException("Couldn't find file for component image "+compRasterUri) 
 			}

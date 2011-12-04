@@ -2,6 +2,7 @@ package togos.picgrid.file
 
 import java.io.File
 import scala.collection.mutable.HashMap
+import java.io.IOException
 
 class SLFFunctionCache( val cacheDir:File )
 {
@@ -24,14 +25,27 @@ class SLFFunctionCache( val cacheDir:File )
 	def apply( cacheName:String, key:String ):String = {
 		val slf = getSlf( cacheName, false )
 		if( slf == null ) return null
-		val bytes = slf.get( key )
-		if( bytes == null ) return null
-		new String( bytes, "UTF-8" )
+		try {
+			val bytes = slf.get( key )
+			if( bytes == null ) return null
+			new String( bytes, "UTF-8" )
+		} catch {
+			case e : IOException =>
+				System.err.println("Warning: Exception when fetching '"+key+"' in "+cacheName+": "+e.getMessage())
+				e.printStackTrace()
+				null
+		}
 	}
 	
 	def update( cacheName:String, key:String, v:String ) {
 		val slf = getSlf( cacheName, true )
-		slf.put( key, v.getBytes("UTF-8") )
+		try {
+			slf.put( key, v.getBytes("UTF-8") )
+		} catch {
+			case e : IOException =>
+				System.err.println("Warning: Exception when adding '"+key+"' in "+cacheName+": "+e.getMessage())
+				e.printStackTrace()
+		}
 	}
 	
 	def flush() = synchronized {
