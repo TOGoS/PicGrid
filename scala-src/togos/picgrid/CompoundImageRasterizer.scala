@@ -26,10 +26,14 @@ class CompoundImageRasterizer(
 		}
 		if( imageType.isRaster ) return imageUri
 		if( imageType == ImageFormat.COMPOSITE ) {
-			var rasterizedUri = functionCache( imageUri ):String
+			var rasterizedUri:String = functionCache( imageUri )
 			if( rasterizedUri == null ) {
 				val ci = CompoundImage.unserialize( datastore( imageUri ) )
-				rasterizedUri = rasterize( ci )
+				rasterizedUri = functionCache( ci.graphicUrn )
+				if( rasterizedUri == null ) {
+					rasterizedUri = rasterize( ci )
+					functionCache( ci.graphicUrn ) = rasterizedUri
+				}
 				functionCache( imageUri ) = rasterizedUri
 			}
 			return rasterizedUri
@@ -48,14 +52,15 @@ class CompoundImageRasterizer(
 		
 		val maxCmdLength = 2048*3 // Not a hard limit, but quit adding args when this is exceeded
 		
-		// If we need to put together more images than wwe can fit
-		// draw commands for in a single command (using 3/4 of 8192 as
+		// If we need to put together more images than we can fit
+		// -draw arguments for in a single command (using 3/4 of 8192 as
 		// a guideline since Windows can't handle commands longer than
 		// 8191), then draw images in batches, using the previous batch's
 		// output as the starting point for the next batch (currentFile)
 		
-		// Starting points for drawing:
+		// Starting points for drawing
 		var currentImage = "xc:black"
+		// Result file from last iteration
 		var currentFile:File = null
 		
 		var compList = ci.components
