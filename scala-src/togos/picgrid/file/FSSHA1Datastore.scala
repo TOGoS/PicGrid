@@ -67,6 +67,18 @@ class FSSHA1Datastore( val dir:File, val extraReadDirs:List[String]=List() ) ext
 		return ("urn:bitprint:" + sha1String + "." + Base32.encode(tigerTreeHash), sha1String)
 	}
 	
+	protected def storeAndDelete( tempFile:File, destFile:File ) = {
+		if( destFile.exists() ) {
+			if( !tempFile.delete() ) {
+				// Then try again later, I guess.
+				tempFile.deleteOnExit()
+			}
+		} else {
+			makeParentDirs( destFile )
+			tempFile.renameTo( destFile )
+		}
+	}
+	
 	/**
 	 *  
 	 */
@@ -77,9 +89,7 @@ class FSSHA1Datastore( val dir:File, val extraReadDirs:List[String]=List() ) ext
 		val (urn, sha1String) = identify(data, (chunk:ByteChunk) => {fos.write( chunk.getBuffer(), chunk.getOffset(), chunk.getSize() )} )
 		fos.close()
 		
-		val destFile = fullPathTo(sha1String)
-		makeParentDirs( destFile )
-		tempFile.renameTo( destFile )
+		storeAndDelete( tempFile, fullPathTo(sha1String) )
 		
 		urn
 	}
@@ -93,9 +103,7 @@ class FSSHA1Datastore( val dir:File, val extraReadDirs:List[String]=List() ) ext
 		val fileBlob = new FileBlob(tempFile)
 		val (urn, sha1String) = identify(fileBlob)
 		
-		val destFile = fullPathTo(sha1String)
-		makeParentDirs( destFile )
-		tempFile.renameTo( destFile )
+		storeAndDelete( tempFile, fullPathTo(sha1String) )
 		
 		urn
 	}

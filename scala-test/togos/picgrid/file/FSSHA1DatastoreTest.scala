@@ -1,11 +1,12 @@
 package togos.picgrid.file
 
 import java.io.File
-
-import junit.framework.Assert.assertEquals
+import junit.framework.Assert.{assertEquals,assertTrue,assertFalse}
 import junit.framework.TestCase
 import togos.mf.base.SimpleByteChunk
 import togos.picgrid.SimpleByteBlob
+import java.io.FileOutputStream
+import togos.picgrid.BlobConversions.byteBlobAsChunkIterator
 
 class FSSHA1DatastoreTest extends TestCase
 {
@@ -24,5 +25,29 @@ class FSSHA1DatastoreTest extends TestCase
 		assertEquals( testUrn, storedUrn )
 		val fetchedData = datastore( testUrn )
 		assertEquals( testBlob, fetchedData )
+	}
+	
+	def testStoreBlobTwice() = {
+		val f = datastore.tempFile(".txt")
+		
+		FileUtil.makeParentDirs(f)
+		
+		val fos1 = new FileOutputStream( f )
+		for( c <- testBlob )  fos1.write( c.getBuffer(), c.getOffset(), c.getSize() )
+		fos1.close()
+		
+		assertTrue( f.exists() )
+		val urn1 = datastore.storeAndRemove( f )
+		assertFalse( f.exists() )
+		
+		val fos2 = new FileOutputStream( f )
+		for( c <- testBlob )  fos2.write( c.getBuffer(), c.getOffset(), c.getSize() )
+		fos2.close()
+		
+		assertTrue( f.exists() )
+		val urn2 = datastore.storeAndRemove( f )
+		assertFalse( f.exists() )
+
+		assertEquals( urn1, urn2 )
 	}
 }
