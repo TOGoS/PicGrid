@@ -6,11 +6,13 @@ import togos.picgrid.image.CompoundImage
 import togos.picgrid.BlobConversions.stringAsByteBlob
 
 class CompoundImageHTMLizer(
-	val datastore:Datastore,
+	val datastore:Datasink,
 	val imageInfoExtractor:ImageInfoExtractor,
-	val gridRenderer:CompoundImageRasterizer
+	val gridRenderer:CompoundImageRasterizer,
+	val referencedUriCallback:(String=>Unit)
 ) {
 	def url( urn:String, name:String ):String = {
+		referencedUriCallback(urn)
 		"../" + urn + "/" + name
 	}
 	

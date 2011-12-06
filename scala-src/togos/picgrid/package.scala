@@ -13,11 +13,6 @@ package object picgrid
 	type FunctionCache = UpdatablePartialFunction[(String,String),String]
 	*/
 	
-	type FunctionCache = {
-		def apply( cacheName:String, key:String ):String
-		def update( cacheName:String, key:String, v:String ):Unit
-	}
-	
 	type Encoder[Decoded,Encoded] = {
 		def apply[Decoded]( i:Decoded ):Encoded
 		def unapply[Encoded]( i:Encoded ):Option[Decoded]

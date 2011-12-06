@@ -11,6 +11,10 @@ object BlobConversions
 		JavaConversions.JIteratorWrapper(b.chunkIterator()).asInstanceOf[Iterator[ByteChunk]]
 	}
 	
+	implicit def byteArrayAsByteBlob( b:Array[Byte] ):ByteBlob = {
+		new SimpleByteBlob( new SimpleByteChunk(b) )
+	}
+	
 	implicit def byteBlobAsByteArray( b:ByteBlob ):Array[Byte] = {
 		val baos = new ByteArrayOutputStream()
 		for( c <- b ) {

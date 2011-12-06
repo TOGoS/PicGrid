@@ -3,47 +3,44 @@ package togos.picgrid.file
 import java.io.File
 import scala.collection.mutable.HashMap
 import java.io.IOException
+import togos.picgrid.FunctionCache
 
-class SLFFunctionCache( val cacheDir:File )
+class SLFFunctionCache( val cacheFile:File ) extends FunctionCache
 {
 	val slfCache = new HashMap[String,SimpleListFile]()
+	var slf:SimpleListFile = null
 	
-	protected def getSlf( name:String, allowCreate:Boolean ):SimpleListFile = synchronized {
-		var slf = slfCache.getOrElse( name, null )
+	protected def getSlf( allowCreate:Boolean ):SimpleListFile = synchronized {
 		if( slf == null ) {
-			val slfFile = new File( cacheDir + "/" + name + ".slf" )
-			if( slfFile.exists() || allowCreate ) {
-				FileUtil.makeParentDirs( slfFile )
-				slf = new SimpleListFile( slfFile, "rw" )
+			if( cacheFile.exists() || allowCreate ) {
+				FileUtil.makeParentDirs( cacheFile )
+				slf = new SimpleListFile( cacheFile, "rw" )
 				slf.initIfEmpty( 65536, 1024*1024 )
-				slfCache( name ) = slf
 			}
 		}
 		slf
 	}
 	
-	def apply( cacheName:String, key:String ):String = {
-		val slf = getSlf( cacheName, false )
+	def apply( key:String ):Array[Byte] = {
+		val slf = getSlf( false )
 		if( slf == null ) return null
 		try {
-			val bytes = slf.get( key )
-			if( bytes == null ) return null
-			new String( bytes, "UTF-8" )
+			slf.get( key )
 		} catch {
 			case e : IOException =>
-				System.err.println("Warning: Exception when fetching '"+key+"' in "+cacheName+": "+e.getMessage())
+				System.err.println("Warning: Exception when fetching '"+key+"' in "+cacheFile+": "+e.getMessage())
 				e.printStackTrace()
 				null
 		}
 	}
 	
-	def update( cacheName:String, key:String, v:String ) {
-		val slf = getSlf( cacheName, true )
+	def update( key:String, v:Array[Byte] ) {
+		val slf = getSlf( true )
 		try {
-			slf.put( key, v.getBytes("UTF-8") )
+			slf.put( key, v )
 		} catch {
 			case e : IOException =>
-				System.err.println("Warning: Exception when adding '"+key+"' in "+cacheName+": "+e.getMessage())
+				System.err.println("Warning: Exception when adding '"+key+"' in "+cacheFile+": "+e.getMessage())
 				e.printStackTrace()
 		}
 	}

@@ -1,5 +1,7 @@
 package togos.picgrid.image
+
 import java.io.InputStream
+
 import javax.imageio.ImageIO
 import javax.imageio.ImageReader
 import togos.mf.value.ByteBlob
@@ -7,23 +9,24 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.Map
 import togos.picgrid.io.ByteBlobInputStream
 import togos.picgrid.FunctionCache
+import togos.picgrid.StringConversions._
 import togos.picgrid.Datasource
 import javax.imageio.stream.ImageInputStream
 import javax.imageio.stream.MemoryCacheImageInputStream
 import java.io.FileNotFoundException
 
-class ImageInfoExtractor( val functionCache:FunctionCache, val datastore:Datasource )
+class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:Datasource )
 {
 	var dimensionCache = new Function[String,(Integer,Integer)] {
 		def apply( uri:String ):(Integer,Integer) = {
-			val str = functionCache( "image-dimensions", uri )
+			val str = imageDimensionCache( uri ):String
 			if( str == null ) return null
 			val parts = str.split(',')
 			(parts(0).toInt, parts(1).toInt)
 		}
 		
 		def update( uri:String, dims:(Integer,Integer) ) {
-			functionCache( "image-dimensions", uri ) = dims._1 + "," + dims._2
+			imageDimensionCache( uri ) = dims._1 + "," + dims._2
 		}
 	}
 	

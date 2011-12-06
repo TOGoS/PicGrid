@@ -4,12 +4,12 @@ package togos.picgrid.image
 import javax.imageio.ImageIO
 import togos.picgrid.io.ByteBlobInputStream
 import togos.picgrid.BetterByteArrayOutputStream
-import togos.picgrid.Datastore
+import togos.picgrid.Datasink
 import togos.picgrid.SimpleByteBlob
 
 class CrapResizer
 {
-	var datastore:Datastore = null
+	var datastore:Datasink = null
 	
 	def load( orig:ImageHandle ):BufferedImage = {
 		val data = datastore(orig.uri);

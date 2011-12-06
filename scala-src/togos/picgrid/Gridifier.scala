@@ -1,22 +1,28 @@
 package togos.picgrid
 
-import image.ImageMagickResizer
-import togos.mf.value.ByteBlob
-import scala.collection.JavaConversions.asScalaIterator
-import java.io.ByteArrayOutputStream
-import togos.mf.value.ByteChunk
-import togos.picgrid.BlobConversions.byteBlobAsString
-import togos.picgrid.image.CompoundImage
-import togos.picgrid.image.ImageInfoExtractor
-import togos.picgrid.image.CompoundImageComponent
-import scala.collection.mutable.ListBuffer
 import java.io.File
-import scala.collection.mutable.HashMap
-import togos.picgrid.image.ImageMagickCropResizer
-import togos.picgrid.image.ImageMagickCommands
-import togos.picgrid.file.FSSHA1Datastore
-import togos.picgrid.file.SLFFunctionCache
+import java.io.FileWriter
+import java.security.MessageDigest
 
+import scala.annotation.serializable
+import scala.collection.mutable.ListBuffer
+
+import org.bitpedia.util.Base32
+
+import togos.picgrid.BlobConversions.byteArrayAsByteBlob
+import togos.picgrid.BlobConversions.byteBlobAsByteArray
+import togos.picgrid.BlobConversions.byteBlobAsString
+import togos.picgrid.StringConversions.stringAsByteArray
+import togos.picgrid.file.FSSHA1Datastore
+import togos.picgrid.file.FileUtil
+import togos.picgrid.file.SLFFunctionCache
+import togos.picgrid.image.CompoundImage
+import togos.picgrid.image.CompoundImageComponent
+import togos.picgrid.image.ImageInfoExtractor
+import togos.picgrid.image.ImageMagickCommands
+import togos.picgrid.image.ImageMagickCropResizer
+
+@serializable
 class ImageInfo(
 	val uri:String, val sourceUri:String,
 	val width:Integer, val height:Integer,
@@ -27,11 +33,14 @@ class ImageEntry( val name:String, val info:ImageInfo )
 
 trait GridificationMethod
 {
+	def configString:String
 	def gridify( images:List[ImageEntry] ):List[CompoundImageComponent]
 }
 
 class RowlyGridificationMethod extends GridificationMethod
 {
+	def configString = "rowly-default"
+	
 	def gridifyRows( images:List[ImageEntry], imagesPerRow:Integer ):List[CompoundImageComponent] = {
 		var rows = ListBuffer[List[ImageEntry]]()
 		var row = ListBuffer[ImageEntry]()
@@ -177,6 +186,8 @@ class RowlyGridificationMethod extends GridificationMethod
 
 class BitmapGridificationMethod extends GridificationMethod
 {
+	def configString = "bitmap-default"
+	
 	class Bitmap( val width:Integer, val height:Integer ) {
 		val data = new Array[Boolean]( width*height )
 		
@@ -330,7 +341,7 @@ class BitmapGridificationMethod extends GridificationMethod
 
 class Gridifier(
 	val functionCache:FunctionCache,
-	val datastore:Datastore,
+	val datastore:Datasink,
 	val infoExtractor:ImageInfoExtractor,
 	val gridificationMethod:GridificationMethod
 ) {
@@ -388,18 +399,43 @@ class Gridifier(
 		gridify( dir.map( e => gridify(e) ).filter( i => i != null ), generatedFromUri )
 	}
 	
+	def hashString( s:String ):String = {
+		val sha1 = MessageDigest.getInstance("SHA-1")
+		val sha1Hash = sha1.digest( s )
+		Base32.encode(sha1Hash)
+	}
+	
+	lazy val configHash = gridificationMethod.configString
+	
 	def gridifyDir( uri:String ):ImageInfo = {
-		gridifyDir( getDirEntries( uri ), uri )
+		val cacheKey = configHash+":"+uri
+		val cachedData = functionCache( cacheKey )
+		if( cachedData != null ) {
+			SerializationUtil.unserialize(cachedData).asInstanceOf[ImageInfo]
+		} else {
+			val res = gridifyDir( getDirEntries( uri ), uri )
+			functionCache( cacheKey ) = SerializationUtil.serialize( res )
+			res
+		}
 	}
 }
 object Gridifier
 {
+	def getCache( dir:String, name:String ):FunctionCache = {
+		if( dir != null ) {
+			new SLFFunctionCache( new File(dir+"/"+name+".slf") )
+		} else {
+			new MemoryFunctionCache()
+		}
+	}
+	
 	def main( args:Array[String] ) {
 		var datastoreDir:String = null
 		var datasources:ListBuffer[String] = new ListBuffer[String]()
 		var functionCacheDir:String = null
 		var i = 0
 		var target:String = null
+		var refFile:File = null
 		while( i < args.length ) {
 			args(i) match {
 				case "-convert-path" =>
@@ -420,6 +456,9 @@ object Gridifier
 					for( f <- msd.listFiles() ) if( f.isDirectory() ) {
 						datasources += f.getPath();
 					}
+				case "-ref-storage" =>
+					i += 1
+					refFile = new File(args(i)) 
 				case arg if !arg.startsWith("-") =>
 					target = arg
 				case arg => throw new RuntimeException("Unrecognised argument: "+arg)
@@ -435,18 +474,26 @@ object Gridifier
 			throw new RuntimeException("Must specify a target")
 		}
 		
-		val functionCache:FunctionCache =
-			if( functionCacheDir != null ) {
-				new SLFFunctionCache( new File(functionCacheDir) )
-			} else {
-				new MemoryFunctionCache()
-			}
-		val imageInfoExtractor = new ImageInfoExtractor( functionCache, datastore )
+		val imageInfoExtractor = new ImageInfoExtractor( getCache(functionCacheDir, "image-dimensions"), datastore )
 		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert )
 		val gridificationMethod = new RowlyGridificationMethod
-		val gridifier = new Gridifier( functionCache, datastore, imageInfoExtractor, gridificationMethod )
-		val rasterizer = new CompoundImageRasterizer( functionCache, datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
-		val htmlizer = new CompoundImageHTMLizer( datastore, imageInfoExtractor, rasterizer )
+		val gridifier = new Gridifier( getCache(functionCacheDir, "gridification"), datastore, imageInfoExtractor, gridificationMethod )
+		val rasterizer = new CompoundImageRasterizer( getCache(functionCacheDir, "rasterize"), datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
+		
+		val refRecorder:String=>Unit = if( refFile == null ) {
+			((a:String) => {})
+		} else {
+			var refWriter:FileWriter = null
+			((a:String) => {
+				if( refWriter == null ) {
+					FileUtil.makeParentDirs( refFile )
+					refWriter = new FileWriter( refFile )
+				}
+				refWriter.write( a + "\n" )
+			})
+		}
+		
+		val htmlizer = new CompoundImageHTMLizer( datastore, imageInfoExtractor, rasterizer, refRecorder )
 		
 		val cimg = gridifier.gridifyDir( target )
 		if( cimg == null ) {
@@ -458,6 +505,8 @@ object Gridifier
 		
 		System.out.println( "rasterize("+cimg.uri+") = " + rasterizer.rasterize( cimg.uri ) )
 		
-		System.out.println( "pagify("+cimg.uri+") = " + htmlizer.pagify( cimg.uri ) )
+		val pageUri = htmlizer.pagify( cimg.uri )
+		refRecorder( pageUri )
+		System.out.println( "pagify("+cimg.uri+") = " + pageUri )
 	}
 }

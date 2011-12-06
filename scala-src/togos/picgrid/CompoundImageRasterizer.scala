@@ -5,6 +5,7 @@ import java.io.FileNotFoundException
 
 import scala.collection.mutable.ArrayBuffer
 
+import togos.picgrid.StringConversions._
 import togos.picgrid.file.FSDatastore
 import togos.picgrid.file.FileBlob
 import togos.picgrid.image.CompoundImage
@@ -25,11 +26,11 @@ class CompoundImageRasterizer(
 		}
 		if( imageType.isRaster ) return imageUri
 		if( imageType == ImageFormat.COMPOSITE ) {
-			var rasterizedUri = functionCache( "rasterize", imageUri )
+			var rasterizedUri = functionCache( imageUri ):String
 			if( rasterizedUri == null ) {
 				val ci = CompoundImage.unserialize( datastore( imageUri ) )
 				rasterizedUri = rasterize( ci )
-				functionCache( "rasterize", imageUri ) = rasterizedUri
+				functionCache( imageUri ) = rasterizedUri
 			}
 			return rasterizedUri
 		}
