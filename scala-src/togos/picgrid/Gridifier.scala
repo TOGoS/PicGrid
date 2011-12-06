@@ -480,10 +480,10 @@ object Gridifier
 		val gridifier = new Gridifier( getCache(functionCacheDir, "gridification"), datastore, imageInfoExtractor, gridificationMethod )
 		val rasterizer = new CompoundImageRasterizer( getCache(functionCacheDir, "rasterize"), datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
 		
+		var refWriter:FileWriter = null
 		val refRecorder:String=>Unit = if( refFile == null ) {
 			((a:String) => {})
 		} else {
-			var refWriter:FileWriter = null
 			((a:String) => {
 				if( refWriter == null ) {
 					FileUtil.makeParentDirs( refFile )
@@ -508,5 +508,7 @@ object Gridifier
 		val pageUri = htmlizer.pagify( cimg.uri )
 		refRecorder( pageUri )
 		System.out.println( "pagify("+cimg.uri+") = " + pageUri )
+		
+		if( refWriter != null ) refWriter.close()
 	}
 }
