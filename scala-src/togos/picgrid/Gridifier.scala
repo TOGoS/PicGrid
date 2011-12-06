@@ -56,16 +56,16 @@ class RowlyGridificationMethod extends GridificationMethod
 				val i = e.info
 				imageWidthRatio += i.width.toFloat / i.height
 			}
-			val rowHeight = (imageSpaceAvailable / imageWidthRatio).toInt
-			var x = 0
+			val rowHeight = (imageSpaceAvailable / imageWidthRatio)
+			var x = 0f
 			for( e <- row ) {
 				val i = e.info
 				val cellWidth = i.width * rowHeight / i.height
-				components += new CompoundImageComponent( x, y, cellWidth, rowHeight, i.uri, e.name )
+				components += new CompoundImageComponent( x.toInt, y, cellWidth.toInt, rowHeight.toInt, i.uri, e.name )
 				x += cellWidth + spacing
 				totalImageCount += i.totalImageCount
 			}
-			y += rowHeight + spacing
+			y += rowHeight.toInt + spacing
 		}
 		
 		components.toList
@@ -95,16 +95,16 @@ class RowlyGridificationMethod extends GridificationMethod
 				val i = e.info
 				imageHeightRatio += i.height.toFloat / i.width
 			}
-			val rowWidth = (imageSpaceAvailable / imageHeightRatio).toInt
-			var y = 0
+			val rowWidth = (imageSpaceAvailable / imageHeightRatio)
+			var y = 0f
 			for( e <- column ) {
 				val i = e.info
 				val cellHeight = i.height * rowWidth / i.width
-				components += new CompoundImageComponent( x, y, rowWidth, cellHeight, i.uri, e.name )
+				components += new CompoundImageComponent( x, y.toInt, rowWidth.toInt, cellHeight.toInt, i.uri, e.name )
 				y += cellHeight + spacing
 				totalImageCount += i.totalImageCount
 			}
-			x += rowWidth + spacing
+			x += rowWidth.toInt + spacing
 		}
 		
 		components.toList
