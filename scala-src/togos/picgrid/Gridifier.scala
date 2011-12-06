@@ -445,7 +445,8 @@ object Gridifier
 		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert )
 		val gridificationMethod = new RowlyGridificationMethod
 		val gridifier = new Gridifier( functionCache, datastore, imageInfoExtractor, gridificationMethod )
-		val gridRenderer = new GridRenderer( functionCache, datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
+		val rasterizer = new CompoundImageRasterizer( functionCache, datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
+		val htmlizer = new CompoundImageHTMLizer( datastore, imageInfoExtractor, rasterizer )
 		
 		val cimg = gridifier.gridifyDir( target )
 		if( cimg == null ) {
@@ -455,6 +456,8 @@ object Gridifier
 		
 		System.out.println( "Compound image URI = "+cimg.uri )
 		
-		System.out.println( "rasterize("+cimg.uri+") = " + gridRenderer.rasterize( cimg.uri ) )
+		System.out.println( "rasterize("+cimg.uri+") = " + rasterizer.rasterize( cimg.uri ) )
+		
+		System.out.println( "pagify("+cimg.uri+") = " + htmlizer.pagify( cimg.uri ) )
 	}
 }

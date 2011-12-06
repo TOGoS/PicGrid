@@ -10,7 +10,7 @@ import togos.picgrid.image.CompoundImage
 import togos.picgrid.image.ImageFormat
 import togos.picgrid.image.ImageInfoExtractor
 
-class GridRenderer(
+class CompoundImageRasterizer(
 	val functionCache:FunctionCache,
 	val datastore:FSDatastore,
 	val imageInfoExtractor:ImageInfoExtractor,

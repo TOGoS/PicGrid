@@ -39,6 +39,9 @@ class CompoundImage(
 		for( c <- components ) {
 			sb.append("COMPONENT "+c+"\n")
 		}
+		if( generatedFromUri != null ) {
+			sb.append("GENERATED-FROM "+generatedFromUri+"\n")
+		}
 		sb.append("TOTAL-IMAGE-COUNT "+totalImageCount+"\n")
 		new SimpleByteBlob(new SimpleByteChunk(sb.toString().getBytes()))
 	}

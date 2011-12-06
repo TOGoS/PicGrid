@@ -3,6 +3,7 @@ import java.io.ByteArrayOutputStream
 import togos.mf.value.ByteChunk
 import togos.mf.value.ByteBlob
 import scala.collection.JavaConversions
+import togos.mf.base.SimpleByteChunk
 
 object BlobConversions
 {
@@ -20,5 +21,9 @@ object BlobConversions
 	
 	implicit def byteBlobAsString( b:ByteBlob ):String = {
 		new String( b, "UTF-8" )
+	}
+	
+	implicit def stringAsByteBlob( s:String ):ByteBlob = {
+		new SimpleByteBlob( new SimpleByteChunk(s.getBytes("UTF-8")) )
 	}
 }
