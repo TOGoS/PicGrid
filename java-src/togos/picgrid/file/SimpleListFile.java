@@ -586,7 +586,10 @@ public class SimpleListFile {
 			addChunkToIndexList(index, CHUNK_TYPE_PAIR, encodePair(identifier, value));
 		} finally {
 			if( lock != null ) {
-				raf.getChannel().force(true);
+				// Forcing to disk seems to be unnecessary for inter-process
+				// synchronization (on Win7, at least).
+				// See notes in SimpleListFile2 or RandomAccessFileTest. 
+				// raf.getChannel().force(true);
 				lock.release();
 			}
 		}

@@ -42,7 +42,7 @@ public class SLFPerformanceTest
 			long totalSlf2Time = 0;
 			long totalSlf2lTime = 0;
 			
-			for( int i=0; i<4; ++i ) {
+			for( int i=0; i<10; ++i ) { // Any higher than 10 and SLF tends to lock up :P
 				HashMap values = new HashMap();
 				for( int j=0; j<256; ++j ) {
 					values.put( rand(128), rand(512) );
@@ -52,7 +52,6 @@ public class SLFPerformanceTest
 				for( Iterator j=values.entrySet().iterator(); j.hasNext(); ) {
 					Map.Entry e = (Map.Entry)j.next();
 					slf2.put( (ByteChunk)e.getKey(), (ByteChunk)e.getValue() );
-					slf2.flush();
 				}
 				totalSlf2Time += System.currentTimeMillis() - st;
 				
@@ -68,6 +67,30 @@ public class SLFPerformanceTest
 				for( Iterator j=values.entrySet().iterator(); j.hasNext(); ) {
 					Map.Entry e = (Map.Entry)j.next();
 					slf2l.put( (ByteChunk)e.getKey(), (ByteChunk)e.getValue() );
+				}
+				totalSlf2lTime += System.currentTimeMillis() - st;
+				
+				// Read them back!
+				
+				st = System.currentTimeMillis();
+				for( Iterator j=values.entrySet().iterator(); j.hasNext(); ) {
+					Map.Entry e = (Map.Entry)j.next();
+					slf2.get( (ByteChunk)e.getKey() );
+				}
+				totalSlf2Time += System.currentTimeMillis() - st;
+				
+				st = System.currentTimeMillis();
+				for( Iterator j=values.entrySet().iterator(); j.hasNext(); ) {
+					Map.Entry e = (Map.Entry)j.next();
+					// These byte chunks' buffers are the entire chunk, so we can do this:
+					slf.get( ((ByteChunk)e.getKey()).getBuffer() );
+				}
+				totalSlfTime += System.currentTimeMillis() - st;
+				
+				st = System.currentTimeMillis();
+				for( Iterator j=values.entrySet().iterator(); j.hasNext(); ) {
+					Map.Entry e = (Map.Entry)j.next();
+					slf2l.get( (ByteChunk)e.getKey() );
 				}
 				totalSlf2lTime += System.currentTimeMillis() - st;
 			}
