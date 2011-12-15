@@ -1,11 +1,11 @@
-package togos.picgrid.io;
+package togos.blob.util;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 
-import togos.mf.value.ByteChunk;
+import togos.blob.ByteChunk;
 
 public class ByteBlobInputStream extends InputStream
 {

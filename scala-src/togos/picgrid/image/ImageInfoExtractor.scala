@@ -4,18 +4,18 @@ import java.io.InputStream
 
 import javax.imageio.ImageIO
 import javax.imageio.ImageReader
-import togos.mf.value.ByteBlob
+import togos.blob.ByteBlob
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.Map
-import togos.picgrid.io.ByteBlobInputStream
-import togos.picgrid.FunctionCache
+import togos.blob.util.ByteBlobInputStream
 import togos.picgrid.BlobConversions._
-import togos.picgrid.Datasource
+import togos.picgrid.BlobSource
+import togos.picgrid.FunctionCache
 import javax.imageio.stream.ImageInputStream
 import javax.imageio.stream.MemoryCacheImageInputStream
 import java.io.FileNotFoundException
 
-class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:Datasource )
+class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:BlobSource )
 {
 	var dimensionCache = new Function[String,(Integer,Integer)] {
 		def apply( uri:String ):(Integer,Integer) = {

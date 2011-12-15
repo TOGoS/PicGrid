@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Random;
 
 import junit.framework.TestCase;
-import togos.mf.base.SimpleByteChunk;
-import togos.mf.value.ByteChunk;
+import togos.blob.ByteChunk;
+import togos.blob.SimpleByteChunk;
 
 public class SimpleListFile2Test extends TestCase
 {

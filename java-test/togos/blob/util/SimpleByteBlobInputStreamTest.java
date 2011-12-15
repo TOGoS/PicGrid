@@ -1,11 +1,12 @@
-package togos.picgrid;
+package togos.blob.util;
 
 import java.util.Random;
 
 import junit.framework.TestCase;
-import togos.mf.base.SimpleByteChunk;
-import togos.mf.value.ByteBlob;
-import togos.picgrid.io.ByteBlobInputStream;
+import togos.blob.ByteBlob;
+import togos.blob.SimpleByteChunk;
+import togos.blob.SingleChunkByteBlob;
+import togos.blob.util.ByteBlobInputStream;
 
 public class SimpleByteBlobInputStreamTest extends TestCase
 {
@@ -15,7 +16,7 @@ public class SimpleByteBlobInputStreamTest extends TestCase
 		int offset = r.nextInt(4);
 		byte[] data = new byte[length+offset];
 		r.nextBytes(data);
-		ByteBlob blob = new SimpleByteBlob( new SimpleByteChunk( data, offset, length ));
+		ByteBlob blob = new SingleChunkByteBlob( new SimpleByteChunk( data, offset, length ));
 		ByteBlobInputStream bbis = new ByteBlobInputStream(blob.chunkIterator());
 		int read = 0;
 		for( int i=offset; i<data.length; ++i ) {

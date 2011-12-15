@@ -6,8 +6,8 @@ import java.util.Iterator;
 
 import org.bitpedia.util.Base32;
 
-import togos.mf.value.ByteBlob;
-import togos.mf.value.ByteChunk;
+import togos.blob.ByteBlob;
+import togos.blob.ByteChunk;
 
 public class DigestUtil
 {

@@ -7,10 +7,10 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 
-import togos.mf.base.SimpleByteChunk;
-import togos.mf.value.ByteChunk;
-import togos.picgrid.DataMap;
+import togos.blob.ByteChunk;
+import togos.blob.SimpleByteChunk;
 import togos.picgrid.RandomAccessBlob;
+import togos.picgrid.store.DataMap;
 
 /**
  * Yet another key-value store, designed for speed and simplicity.

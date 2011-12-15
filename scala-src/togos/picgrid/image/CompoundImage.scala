@@ -1,15 +1,14 @@
 package togos.picgrid.image
 
-import togos.mf.value.ByteBlob
-import togos.mf.base.SimpleByteChunk
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import togos.picgrid.io.ByteBlobInputStream
-import togos.picgrid.SimpleByteBlob
 import scala.collection.mutable.LinkedList
 import java.util.ArrayList
 import scala.collection.mutable.ListBuffer
 import togos.picgrid.DigestUtil
+import togos.picgrid.BlobConversions._
+import togos.blob.ByteBlob
+import togos.blob.util.ByteBlobInputStream
 
 class CompoundImageComponent(
 	val x:Integer, val y:Integer, val width:Integer, val height:Integer,
@@ -28,7 +27,7 @@ class CompoundImage(
 ) {
 	def aspectRatio = width.toFloat / height
 	
-	def serialize():ByteBlob = {
+	def serialize():String = {
 		val sb = new StringBuilder()
 		sb.append("COMPOUND-IMAGE "+width+","+height+"\n")
 		if( promotedImage1Uri != null ) {
@@ -44,7 +43,7 @@ class CompoundImage(
 			sb.append("GENERATED-FROM "+generatedFromUri+"\n")
 		}
 		sb.append("TOTAL-IMAGE-COUNT "+totalImageCount+"\n")
-		new SimpleByteBlob(new SimpleByteChunk(sb.toString().getBytes()))
+		sb.toString()
 	}
 	
 	def withoutMetadata = new CompoundImage( width, height, components, null, null, 0, null )

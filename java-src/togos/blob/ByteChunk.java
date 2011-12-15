@@ -1,4 +1,4 @@
-package togos.mf.value;
+package togos.blob;
 
 public interface ByteChunk
 {

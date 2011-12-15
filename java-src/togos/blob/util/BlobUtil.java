@@ -1,10 +1,11 @@
-package togos.mf.base;
+package togos.blob.util;
 
 import java.io.UnsupportedEncodingException;
 
-import togos.mf.value.ByteChunk;
+import togos.blob.ByteBlob;
+import togos.blob.ByteChunk;
 
-public class Util
+public class BlobUtil
 {
 	public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 	
@@ -77,35 +78,6 @@ public class Util
 		return c.hashCode();
 	}
 	
-	/*
-	public static final int hashCode( Request req ) {
-		int hashCode = 1;
-		hashCode = hashCode*31 + req.getVerb().hashCode();
-		hashCode = hashCode*31 + req.getResourceName().hashCode();
-		hashCode = hashCode*31 + req.getMetadata().hashCode();
-		hashCode = hashCode*31 + req.getContentMetadata().hashCode();
-		hashCode = hashCode*31 + contentHashCode(req.getContent());
-		return hashCode;
-	}
-
-	public static final int hashCode( Response res ) {
-		int hashCode = 1;
-		hashCode = hashCode*31 + res.getStatus();
-		hashCode = hashCode*31 + res.getMetadata().hashCode();
-		hashCode = hashCode*31 + res.getContentMetadata().hashCode();
-		hashCode = hashCode*31 + contentHashCode(res.getContent());
-		return hashCode;
-	}
-	
-	public static final int hashCode( Message m ) {
-		int hashCode = 1;
-		hashCode = hashCode*31 + m.getMessageType();
-		hashCode = hashCode*31 + (int)(m.getSessionId());
-		hashCode = hashCode*31 + (int)(m.getSessionId() >> 32);
-		hashCode = hashCode*31 + m.getPayload().hashCode();
-		return hashCode;
-	}
-	
 	public static final boolean contentEquals( Object c1, Object c2 ) {
 		if( c1 == null && c2 == null ) return true;
 		if( c1 == null || c2 == null ) return false;
@@ -115,28 +87,20 @@ public class Util
 		return c1.equals(c2);
 	}
 	
-	public static final boolean equals( Request r1, Request r2 ) {
-		if( !r1.getVerb().equals(r2.getVerb()) ) return false;
-		if( !r1.getResourceName().equals(r2.getResourceName()) ) return false;
-		if( !r1.getMetadata().equals(r2.getMetadata()) ) return false;
-		if( !r1.getContentMetadata().equals(r2.getContentMetadata()) ) return false;
-		if( !contentEquals(r1.getContent(), r2.getContent()) ) return false;
+	/**
+	 * Don't compare blobs this way.
+	 * TODO: Implement more efficiently
+	 */
+	public static boolean equals( ByteBlob b1, ByteBlob b2 ) {
+		if( b1.getSize() != -1 && b2.getSize() != -1 && b1.getSize() != b2.getSize() ) return false;
+		
+		int r1;
+		ByteBlobInputStream s1 = new ByteBlobInputStream(b1.chunkIterator());
+		ByteBlobInputStream s2 = new ByteBlobInputStream(b2.chunkIterator());
+		do {
+			r1 = s1.read();
+			if( s2.read() != r1 ) return false;
+		} while( r1 != -1 );
 		return true;
 	}
-	
-	public static final boolean equals( Response r1, Response r2 ) {
-		if( r1.getStatus() != r2.getStatus() ) return false;
-		if( !r1.getMetadata().equals(r2.getMetadata()) ) return false;
-		if( !r1.getContentMetadata().equals(r2.getContentMetadata()) ) return false;
-		if( !contentEquals(r1.getContent(), r2.getContent()) ) return false;
-		return true;
-	}
-	
-	public static final boolean equals( Message m1, Message m2 ) {
-		return
-			m1.getMessageType() == m2.getMessageType() &&
-			m1.getSessionId() == m2.getSessionId() &&
-			m1.getPayload().equals(m2.getPayload());
-	}
-	*/
 }

@@ -1,13 +1,14 @@
 package togos.picgrid.file
 
 import java.io.File
-import togos.picgrid.Datasink
+
+import togos.picgrid.BlobAutoStore
 
 /**
  * A datastore that can import files directly, possibly
  * optimizing the process somehow
  */
-trait FSDatastore extends Datasink
+trait FSDatastore extends BlobAutoStore
 {
 	/**
 	 * Return a new temporary file, preferably on the same

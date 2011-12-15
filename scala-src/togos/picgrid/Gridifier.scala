@@ -16,7 +16,7 @@ import togos.picgrid.image.ImageInfoExtractor
 import togos.picgrid.image.ImageMagickCommands
 import togos.picgrid.image.ImageMagickCropResizer
 import togos.picgrid.file.SLF2FunctionCache
-import togos.mf.value.ByteChunk
+import togos.blob.ByteChunk
 
 @serializable
 class ImageInfo(
@@ -338,7 +338,7 @@ class BitmapGridificationMethod extends GridificationMethod
 
 class Gridifier(
 	val functionCache:FunctionCache,
-	val datastore:Datasink,
+	val datastore:BlobAutoStore,
 	val infoExtractor:ImageInfoExtractor,
 	val gridificationMethod:GridificationMethod
 ) {
