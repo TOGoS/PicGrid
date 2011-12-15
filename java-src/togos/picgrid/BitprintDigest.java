@@ -1,7 +1,6 @@
 package togos.picgrid;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import org.bitpedia.util.Base32;
 import org.bitpedia.util.TigerTree;
@@ -21,11 +20,7 @@ public class BitprintDigest extends MessageDigest
 	
 	public BitprintDigest() {
 		super("Bitprint");
-		try {
-			sha1 = MessageDigest.getInstance("SHA-1");
-		} catch( NoSuchAlgorithmException e ) {
-			throw new RuntimeException("Apparently SHA-1 isn't available", e);
-		}
+		sha1 = DigestUtil.newSha1Digest();
 		tt   = new TigerTree();
 	}
 	

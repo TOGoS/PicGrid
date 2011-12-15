@@ -9,6 +9,7 @@ import togos.picgrid.SimpleByteBlob
 import scala.collection.mutable.LinkedList
 import java.util.ArrayList
 import scala.collection.mutable.ListBuffer
+import togos.picgrid.DigestUtil
 
 class CompoundImageComponent(
 	val x:Integer, val y:Integer, val width:Integer, val height:Integer,
@@ -45,6 +46,10 @@ class CompoundImage(
 		sb.append("TOTAL-IMAGE-COUNT "+totalImageCount+"\n")
 		new SimpleByteBlob(new SimpleByteChunk(sb.toString().getBytes()))
 	}
+	
+	def withoutMetadata = new CompoundImage( width, height, components, null, null, 0, null )
+	
+	lazy val graphicUrn = "urn:sha1:"+DigestUtil.sha1Base32(withoutMetadata.serialize())
 }
 object CompoundImage
 {

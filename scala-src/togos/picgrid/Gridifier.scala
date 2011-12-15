@@ -25,6 +25,7 @@ class ImageInfo(
 	val totalImageCount:Integer
 )
 
+@serializable
 class ImageEntry( val name:String, val info:ImageInfo )
 
 trait GridificationMethod
@@ -350,28 +351,27 @@ class Gridifier(
 		RDFDirectoryParser.parseDirectory( rdfBlob )
 	}
 	
-	def gridifySingleImage( uri:String ):ImageInfo = {
+	def gridifyRasterImage( uri:String, name:String ):ImageEntry = {
 		val dims = infoExtractor.getImageDimensions( uri )
 		if( dims == null ) return null
 		val (w,h) = dims
-		new ImageInfo( uri, uri, w, h, 1 )
+		new ImageEntry( name, new ImageInfo( uri, uri, w, h, 1 ) )
 	}
 	
 	def gridify( e:DirectoryEntry ):ImageEntry = {
-		val info = e.targetClass match {
+		e.targetClass match {
 			case DirectoryObjectClass.Blob => e.name match {
-				case imageFilenameRegex() => gridifySingleImage(e.targetUri)
+				case imageFilenameRegex() => gridifyRasterImage(e.targetUri, e.name)
 				case _ => null
 			}
 			case DirectoryObjectClass.Directory =>
-				gridifyDir( e.targetUri )
+				gridifyDir( e.targetUri, e.name )
 		}
-		new ImageEntry( e.name, info )
 	}
 	
-	def gridify( images:List[ImageEntry], generatedFromUri:String ):ImageInfo = {
+	def gridify( images:List[ImageEntry], name:String, generatedFromUri:String ):ImageEntry = {
 		if( images.length == 0 ) return null
-		if( images.length == 1 ) return images.head.info
+		if( images.length == 1 ) return images.head
 		
 		val components = gridificationMethod.gridify( images )
 		
@@ -387,12 +387,12 @@ class Gridifier(
 		val ci = new CompoundImage( width, height, components, null, null, totalImageCount, generatedFromUri )
 		
 		val uri = datastore.store( ci.serialize() )
-		new ImageInfo( uri, generatedFromUri, ci.width, ci.height, ci.totalImageCount )
+		new ImageEntry( name, new ImageInfo( uri, generatedFromUri, ci.width, ci.height, ci.totalImageCount ) )
 	}
 	
 	
-	def gridifyDir( dir:List[DirectoryEntry], generatedFromUri:String ):ImageInfo = {
-		gridify( dir.map( e => gridify(e) ).filter( i => i != null ), generatedFromUri )
+	def gridifyDir( dir:List[DirectoryEntry], name:String, generatedFromUri:String ):ImageEntry = {
+		gridify( dir.map( e => gridify(e) ).filter( e => e != null ), name, generatedFromUri )
 	}
 	
 	def hashString( s:String ):String = {
@@ -403,13 +403,13 @@ class Gridifier(
 	
 	lazy val configHash = gridificationMethod.configString
 	
-	def gridifyDir( uri:String ):ImageInfo = {
+	def gridifyDir( uri:String, name:String ):ImageEntry = {
 		val cacheKey = configHash+":"+uri
 		val cachedData:ByteChunk = functionCache( cacheKey )
 		if( cachedData != null ) {
-			SerializationUtil.unserialize(cachedData).asInstanceOf[ImageInfo]
+			SerializationUtil.unserialize(cachedData).asInstanceOf[ImageEntry]
 		} else {
-			val res:ImageInfo = gridifyDir( getDirEntries( uri ), uri )
+			val res:ImageEntry = gridifyDir( getDirEntries( uri ), name, uri )
 			functionCache( cacheKey ) = SerializationUtil.serialize( res )
 			res
 		}
@@ -491,19 +491,21 @@ object Gridifier
 		
 		val htmlizer = new CompoundImageHTMLizer( datastore, imageInfoExtractor, rasterizer, refRecorder )
 		
-		val cimg = gridifier.gridifyDir( target )
-		if( cimg == null ) {
+		val centry = gridifier.gridifyDir( target, null )
+		if( centry == null ) {
 			System.err.println("No images found!")
 			return
 		}
 		
-		System.out.println( "Compound image URI = "+cimg.uri )
+		val cinfo = centry.info
 		
-		System.out.println( "rasterize("+cimg.uri+") = " + rasterizer.rasterize( cimg.uri ) )
+		System.out.println( "Compound image URI = "+cinfo.uri )
 		
-		val pageUri = htmlizer.pagify( cimg.uri )
+		System.out.println( "rasterize("+cinfo.uri+") = " + rasterizer.rasterize( cinfo.uri ) )
+		
+		val pageUri = htmlizer.pagify( cinfo.uri )
 		refRecorder( pageUri )
-		System.out.println( "pagify("+cimg.uri+") = " + pageUri )
+		System.out.println( "pagify("+cinfo.uri+") = " + pageUri )
 		
 		if( refWriter != null ) refWriter.close()
 	}
