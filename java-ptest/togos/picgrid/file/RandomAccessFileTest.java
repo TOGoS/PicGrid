@@ -21,7 +21,7 @@ public class RandomAccessFileTest
 			l.release();
 			
 			while( true ) {
-				Thread.sleep(2000);
+				// Thread.sleep(2000);
 				l = raf.getChannel().lock();
 				raf.seek(0);
 				int thing = raf.read();

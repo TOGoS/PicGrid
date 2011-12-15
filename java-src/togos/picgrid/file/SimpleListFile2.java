@@ -13,25 +13,36 @@ import togos.picgrid.DataMap;
 import togos.picgrid.RandomAccessBlob;
 
 /**
- * File format:
+ * Yet another key-value store, designed for speed and simplicity.
+ * To cut down on multiple reads, references to chunks contain the chunk's
+ * length; this way, once you have a reference to a chunk, it can be
+ * read all at once.
+ * 
+ * Header format:
  *   "SLF2"
- *   <header entries>
+ *   "INDX" <64-bit index chunk reference>
+ *   "RECL" <64-bit recycle list reference>
+ *   "EHDR" ; indicates end of header entries
  * 
  * Chunk reference format (64 bits, total):
  *   <8 reserved bits> <40-bit offset> <16-bit size>
+ *   
+ *   'size' usually means number of bytes in the target chunk,
+ *   but in the case of the index chunk it's log2(number of index entries).
+ *   i.e. index size in bytes = 8 * (1 << size).
+ *   
+ *   Offsets and sizes are unsigned.  A 'null pointer' is represented
+ *   by all 64 bits being zero.
  * 
- * Header entries:
- *   "INDX" <index chunk reference>
- *   "RECL" <recycle list reference>
- *   "EHDR" ; indicates end of header entries
- * 
- * Index is simply a list of chunk offsets.
+ * The index chunk is simply a list of list chunk references (8 bytes each).
  * 
  * List chunk format:
- *   <next chunk reference> <payload>
+ *   <64-bit reference to next chunk> <payload>
  * 
  * Key/value chunk payload format:
  *   "PAIR" <16-bit key length> <16-bit data length> <key> <data> <possible garbage>
+ * 
+ * Chunks in the recycle list have no format; the data they contain is garbage.
  */
 public class SimpleListFile2 implements DataMap, Flushable, Closeable
 {
@@ -268,6 +279,8 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 			
 				ByteChunk pair = encodePair( oldList, key, value );
 				long newListOffset = blob.getSize();
+				// TODO: May want to adjust the location of the new chunk
+				// to avoid crossing 4kB boundaries.
 				blob.put( newListOffset, pair );
 				putLong( indexPos, chunkRef(newListOffset, pair.getSize()) );
 			} finally {
