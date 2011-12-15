@@ -300,7 +300,14 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 			} finally {
 				if( fl != null ) {
 					fl.release();
-					fileChannel.force(false);
+					// On Windows 7 at least, this seems to be sufficient to
+					// constructively work on the same file from multiple processes
+					// even though the file will be reported by `dir` with its
+					// old size until it is closed by a process.
+					//
+					// i.e. force(...) does not seem necessary for
+					// synchronization between processes, which is good because
+					// it's terribly slow.
 				}
 			}
 		} catch( IOException e ) {
