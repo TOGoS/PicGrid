@@ -5,7 +5,7 @@ import java.io.FileNotFoundException
 
 import scala.collection.mutable.ArrayBuffer
 
-import togos.picgrid.StringConversions._
+import togos.picgrid.BlobConversions._
 import togos.picgrid.file.FSDatastore
 import togos.picgrid.file.FileBlob
 import togos.picgrid.image.CompoundImage

@@ -2,25 +2,21 @@ package togos.picgrid.file
 
 import java.io.File
 import java.io.IOException
-
 import scala.collection.mutable.HashMap
-
-import togos.mf.value.ByteChunk
-import togos.picgrid.BlobConversions.byteArrayAsByteChunk
-import togos.picgrid.BlobConversions.byteChunkAsByteArray
+import togos.picgrid.BlobConversions.stringAsByteChunk
 import togos.picgrid.FunctionCache
+import togos.mf.value.ByteChunk
 
-class SLFFunctionCache( val cacheFile:File ) extends FunctionCache
+class SLF2FunctionCache( val cacheFile:File ) extends FunctionCache
 {
 	val slfCache = new HashMap[String,SimpleListFile]()
-	var slf:SimpleListFile = null
+	var slf:SimpleListFile2 = null
 	
-	protected def getSlf( allowCreate:Boolean ):SimpleListFile = synchronized {
+	protected def getSlf( allowCreate:Boolean ):SimpleListFile2 = synchronized {
 		if( slf == null ) {
 			if( cacheFile.exists() || allowCreate ) {
 				FileUtil.makeParentDirs( cacheFile )
-				slf = new SimpleListFile( cacheFile, "rw" )
-				slf.initIfEmpty( 65536, 1024*1024 )
+				slf = new SimpleListFile2( new RandomAccessFileBlob(cacheFile, "rw"), 15, false )
 			}
 		}
 		slf

@@ -1,7 +1,8 @@
 package togos.picgrid
+import togos.mf.value.ByteChunk
 
 trait FunctionCache
 {
-	def apply( key:String ):Array[Byte]
-	def update( key:String, value:Array[Byte] ):Unit
+	def apply( key:String ):ByteChunk
+	def update( key:String, value:ByteChunk ):Unit
 }

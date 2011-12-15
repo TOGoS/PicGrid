@@ -3,16 +3,10 @@ package togos.picgrid
 import java.io.File
 import java.io.FileWriter
 import java.security.MessageDigest
-
 import scala.annotation.serializable
 import scala.collection.mutable.ListBuffer
-
 import org.bitpedia.util.Base32
-
-import togos.picgrid.BlobConversions.byteArrayAsByteBlob
-import togos.picgrid.BlobConversions.byteBlobAsByteArray
-import togos.picgrid.BlobConversions.byteBlobAsString
-import togos.picgrid.StringConversions.stringAsByteArray
+import togos.picgrid.BlobConversions._
 import togos.picgrid.file.FSSHA1Datastore
 import togos.picgrid.file.FileUtil
 import togos.picgrid.file.SLFFunctionCache
@@ -21,6 +15,8 @@ import togos.picgrid.image.CompoundImageComponent
 import togos.picgrid.image.ImageInfoExtractor
 import togos.picgrid.image.ImageMagickCommands
 import togos.picgrid.image.ImageMagickCropResizer
+import togos.picgrid.file.SLF2FunctionCache
+import togos.mf.value.ByteChunk
 
 @serializable
 class ImageInfo(
@@ -409,11 +405,11 @@ class Gridifier(
 	
 	def gridifyDir( uri:String ):ImageInfo = {
 		val cacheKey = configHash+":"+uri
-		val cachedData = functionCache( cacheKey )
+		val cachedData:ByteChunk = functionCache( cacheKey )
 		if( cachedData != null ) {
 			SerializationUtil.unserialize(cachedData).asInstanceOf[ImageInfo]
 		} else {
-			val res = gridifyDir( getDirEntries( uri ), uri )
+			val res:ImageInfo = gridifyDir( getDirEntries( uri ), uri )
 			functionCache( cacheKey ) = SerializationUtil.serialize( res )
 			res
 		}
@@ -423,7 +419,7 @@ object Gridifier
 {
 	def getCache( dir:String, name:String ):FunctionCache = {
 		if( dir != null ) {
-			new SLFFunctionCache( new File(dir+"/"+name+".slf") )
+			new SLF2FunctionCache( new File(dir+"/"+name+".slf2") )
 		} else {
 			new MemoryFunctionCache()
 		}

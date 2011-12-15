@@ -9,7 +9,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.Map
 import togos.picgrid.io.ByteBlobInputStream
 import togos.picgrid.FunctionCache
-import togos.picgrid.StringConversions._
+import togos.picgrid.BlobConversions._
 import togos.picgrid.Datasource
 import javax.imageio.stream.ImageInputStream
 import javax.imageio.stream.MemoryCacheImageInputStream

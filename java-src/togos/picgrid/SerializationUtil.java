@@ -7,7 +7,6 @@ import java.io.ObjectOutputStream;
 
 import togos.mf.base.SimpleByteChunk;
 import togos.mf.value.ByteBlob;
-import togos.picgrid.SimpleByteBlob;
 import togos.picgrid.io.ByteBlobInputStream;
 
 public class SerializationUtil
@@ -26,6 +25,7 @@ public class SerializationUtil
 	
 	public static Object unserialize( ByteBlob b ) {
 		ByteBlobInputStream bbis = new ByteBlobInputStream(b.chunkIterator());
+		
 		try {
 			return new ObjectInputStream( bbis ).readObject();
 		} catch( IOException e ) {

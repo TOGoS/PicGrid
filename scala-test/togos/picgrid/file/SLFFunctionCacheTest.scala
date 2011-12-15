@@ -1,9 +1,11 @@
 package togos.picgrid.file
 
-import junit.framework.TestCase
-import junit.framework.Assert.assertEquals
 import java.io.File
-import togos.picgrid.StringConversions._
+
+import junit.framework.Assert.assertEquals
+import junit.framework.TestCase
+import togos.picgrid.BlobConversions.byteChunkAsString
+import togos.picgrid.BlobConversions.stringAsByteChunk
 
 class SLFFunctionCacheTest extends TestCase
 {
