@@ -23,7 +23,7 @@ public class ByteBlobInputStream extends InputStream
 	 * starting at the current position, or null if there is no data left. 
 	 */
 	protected ByteChunk getCurrentChunk() {
-		while( !ended && (currentChunk == null || currentChunkPosition >= currentChunk.getSize()-currentChunk.getOffset()) ) {
+		while( !ended && (currentChunk == null || currentChunkPosition >= currentChunk.getSize()) ) {
 			if( chunks.hasNext() ) {
 				currentChunk = (ByteChunk)chunks.next();
 				currentChunkPosition = 0;
@@ -38,7 +38,7 @@ public class ByteBlobInputStream extends InputStream
 	public int read() {
 		ByteChunk c = getCurrentChunk();
 		if( c == null ) return -1;
-		return c.getBuffer()[c.getOffset()+currentChunkPosition++];
+		return c.getBuffer()[c.getOffset()+currentChunkPosition++] & 0xFF;
 	}
 	
 	public int available() {

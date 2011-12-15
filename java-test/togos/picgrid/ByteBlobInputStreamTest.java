@@ -20,7 +20,7 @@ public class ByteBlobInputStreamTest extends TestCase
 		chunks.add( new SimpleByteChunk( new byte[]{4,5,6,7,8} ) );
 		chunks.add( new SimpleByteChunk( new byte[]{} ) );
 		chunks.add( new SimpleByteChunk( new byte[]{9} ) );
-		chunks.add( new SimpleByteChunk( new byte[]{10,11,12,13,14,15,16} ) );
+		chunks.add( new SimpleByteChunk( new byte[]{10,11,12,13,14,15,-1} ) );
 		chunks.add( new SimpleByteChunk( new byte[]{} ) );
 		bbis = new ByteBlobInputStream( chunks.iterator() );
 	}
@@ -42,7 +42,7 @@ public class ByteBlobInputStreamTest extends TestCase
 		assertEquals( 13, bbis.read() );
 		assertEquals( 14, bbis.read() );
 		assertEquals( 15, bbis.read() );
-		assertEquals( 16, bbis.read() );
+		assertEquals( 255, bbis.read() );
 		assertEquals( -1, bbis.read() );
 	}
 	
@@ -64,7 +64,7 @@ public class ByteBlobInputStreamTest extends TestCase
 		assertExactBytesRead( bbis, 1, new byte[]{3} );
 		assertExactBytesRead( bbis, 6, new byte[]{4,5,6,7,8} );
 		assertExactBytesRead( bbis, 6, new byte[]{9} );
-		assertExactBytesRead( bbis, 10, new byte[]{10,11,12,13,14,15,16} );
+		assertExactBytesRead( bbis, 10, new byte[]{10,11,12,13,14,15,-1} );
 		assertExactBytesRead( bbis, 10, null );
 	}
 }
