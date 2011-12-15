@@ -123,7 +123,7 @@ public class SimpleListFile {
 	}
 	
 	protected byte[] createIndexData(int numEntries) {
-		byte[] dat = new byte[numEntries*4 + 4];
+		byte[] dat = new byte[numEntries*4 + 16 * 4];
 		intToBytes(numEntries, dat, 0);
 		return dat;
 	}
