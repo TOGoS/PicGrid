@@ -18,7 +18,10 @@ class CompoundImageRasterizer(
 	val imageInfoExtractor:ImageInfoExtractor,
 	val resizer:ImageResizer,
 	val imConvert:CommandLine
-) {
+) extends Function[String,String]
+{
+	def apply( imageUri:String ):String = rasterize(imageUri)
+	
 	def rasterize( imageUri:String ):String = {
 		val imageType = imageInfoExtractor.getImageType(imageUri)
 		if( imageType == null ) {

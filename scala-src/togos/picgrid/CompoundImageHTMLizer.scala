@@ -8,7 +8,7 @@ import togos.picgrid.BlobConversions.stringAsByteBlob
 class CompoundImageHTMLizer(
 	val datastore:BlobAutoStore,
 	val imageInfoExtractor:ImageInfoExtractor,
-	val gridRenderer:CompoundImageRasterizer,
+	val gridRenderer:(String=>String),
 	val referencedUriCallback:(String=>Unit)
 ) {
 	def url( urn:String, name:String ):String = {
@@ -74,7 +74,7 @@ class CompoundImageHTMLizer(
 			throw new Exception("Don't know how to pagify image of type "+imageType)
 		}
 		
-		val rasterizedUrl = gridRenderer.rasterize( imageUri )
+		val rasterizedUrl = gridRenderer( imageUri )
 		
 		val ci = CompoundImage.unserialize( datastore(imageUri) )
 		
