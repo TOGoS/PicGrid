@@ -66,7 +66,7 @@ public class SimpleListFile2Test extends TestCase
 		
 		blob.close();
 		blob = new RandomAccessFileBlob(f, "rw");
-		slf = new SimpleListFile2(blob, 8, false);
+		slf = new SimpleListFile2(blob, 8, lock);
 		
 		for( Iterator i=kv.entrySet().iterator(); i.hasNext(); ) {
 			Map.Entry e = (Map.Entry)i.next();
