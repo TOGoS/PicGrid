@@ -1,4 +1,4 @@
-package togos.mf.value;
+package togos.blob;
 
 import java.util.Iterator;
 

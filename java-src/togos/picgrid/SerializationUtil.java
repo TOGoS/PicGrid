@@ -5,9 +5,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import togos.mf.base.SimpleByteChunk;
-import togos.mf.value.ByteBlob;
-import togos.picgrid.io.ByteBlobInputStream;
+import togos.blob.ByteBlob;
+import togos.blob.SimpleByteChunk;
+import togos.blob.SingleChunkByteBlob;
+import togos.blob.util.ByteBlobInputStream;
 
 public class SerializationUtil
 {
@@ -17,7 +18,7 @@ public class SerializationUtil
 			ObjectOutputStream oos = new ObjectOutputStream(baos);
 			oos.writeObject(o);
 			oos.close();
-			return new SimpleByteBlob( new SimpleByteChunk(baos.toByteArray()) );
+			return new SingleChunkByteBlob( new SimpleByteChunk(baos.toByteArray()) );
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}

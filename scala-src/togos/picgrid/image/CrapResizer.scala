@@ -1,15 +1,14 @@
 package togos.picgrid.image
 import java.awt.image.BufferedImage
-
 import javax.imageio.ImageIO
-import togos.picgrid.io.ByteBlobInputStream
+import togos.blob.util.ByteBlobInputStream
 import togos.picgrid.BetterByteArrayOutputStream
-import togos.picgrid.Datasink
-import togos.picgrid.SimpleByteBlob
+import togos.picgrid.BlobAutoStore
+import togos.blob.SingleChunkByteBlob
 
 class CrapResizer
 {
-	var datastore:Datasink = null
+	var datastore:BlobAutoStore = null
 	
 	def load( orig:ImageHandle ):BufferedImage = {
 		val data = datastore(orig.uri);
@@ -41,7 +40,7 @@ class CrapResizer
 		val thamb:BufferedImage = ResizeUtil.chrisResize( oImg, w, h )
 		val baos:BetterByteArrayOutputStream = new BetterByteArrayOutputStream()
 		ImageIO.write( thamb, "jpeg", baos )
-		val thambUri = datastore.store( new SimpleByteBlob(baos) )
+		val thambUri = datastore.store( new SingleChunkByteBlob(baos) )
 		new ImageHandle( thambUri, ImageFormat.JPEG, baos.getSize(), thamb.getWidth(null), thamb.getHeight(null) )
 	}
 }

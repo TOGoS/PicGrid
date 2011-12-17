@@ -3,8 +3,8 @@ package togos.picgrid.file
 import java.io.File
 import junit.framework.Assert.{assertEquals,assertTrue,assertFalse}
 import junit.framework.TestCase
-import togos.mf.base.SimpleByteChunk
-import togos.picgrid.SimpleByteBlob
+import togos.blob.SimpleByteChunk
+import togos.blob.SingleChunkByteBlob
 import java.io.FileOutputStream
 import togos.picgrid.BlobConversions.byteBlobAsChunkIterator
 
@@ -12,7 +12,7 @@ class FSSHA1DatastoreTest extends TestCase
 {
 	var dsDir:File = null
 	var datastore:FSSHA1Datastore = null
-	val testBlob = new SimpleByteBlob( new SimpleByteChunk( "Hello, world!".getBytes() ) )
+	val testBlob = new SingleChunkByteBlob( new SimpleByteChunk( "Hello, world!".getBytes() ) )
 	val testUrn = "urn:bitprint:SQ5HALIG6NCZTLXB7DNI56PXFFQDDVUZ.276TET7NAXG7FVCDQWOENOX4VABJSZ4GBV7QATQ"
 	
 	override def setUp() = {

@@ -1,4 +1,5 @@
 package togos.picgrid.image
+
 import java.io.File
 
 import scala.collection.mutable.HashMap
@@ -7,8 +8,8 @@ import togos.picgrid.file.FileUtil.makeParentDirs
 import togos.picgrid.file.FSDatastore
 import togos.picgrid.file.FSSHA1Datastore
 import togos.picgrid.file.FileBlob
-import togos.picgrid.FunctionCache
 import togos.picgrid.CommandLine
+import togos.picgrid.FunctionCache
 import togos.picgrid.MemoryFunctionCache
 
 class ImageMagickResizer( val functionCache:FunctionCache, val datastore:FSDatastore, val imConvert:CommandLine )

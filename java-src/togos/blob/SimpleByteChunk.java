@@ -1,6 +1,6 @@
-package togos.mf.base;
+package togos.blob;
 
-import togos.mf.value.ByteChunk;
+import togos.blob.util.BlobUtil;
 
 public class SimpleByteChunk implements ByteChunk
 {
@@ -34,11 +34,11 @@ public class SimpleByteChunk implements ByteChunk
 	public int getSize() { return length; }
 	
 	public int hashCode() {
-		return Util.hashCode(data, offset, length);
+		return BlobUtil.hashCode(data, offset, length);
 	}
 	
 	public boolean equals( Object o ) {
-		if( o instanceof ByteChunk ) return Util.equals( this, (ByteChunk)o );
+		if( o instanceof ByteChunk ) return BlobUtil.equals( this, (ByteChunk)o );
 		return false;
 	}
 }

@@ -5,8 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import togos.mf.base.SimpleByteChunk;
-import togos.mf.value.ByteChunk;
+import togos.blob.ByteChunk;
+import togos.blob.SimpleByteChunk;
 import togos.picgrid.RandomAccessBlob;
 
 public class RandomAccessFileBlob extends RandomAccessFile

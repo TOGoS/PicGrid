@@ -2,10 +2,8 @@ package togos.picgrid.file
 
 import java.io.File
 import java.io.IOException
-
 import scala.collection.mutable.HashMap
-
-import togos.mf.value.ByteChunk
+import togos.blob.ByteChunk
 import togos.picgrid.BlobConversions.byteArrayAsByteChunk
 import togos.picgrid.BlobConversions.byteChunkAsByteArray
 import togos.picgrid.FunctionCache
@@ -26,7 +24,7 @@ class SLFFunctionCache( val cacheFile:File ) extends FunctionCache
 		slf
 	}
 	
-	def apply( key:String ):ByteChunk = {
+	def apply( key:ByteChunk ):ByteChunk = {
 		val slf = getSlf( false )
 		if( slf == null ) return null
 		try {
@@ -39,7 +37,7 @@ class SLFFunctionCache( val cacheFile:File ) extends FunctionCache
 		}
 	}
 	
-	def update( key:String, v:ByteChunk ) {
+	def update( key:ByteChunk, v:ByteChunk ) {
 		val slf = getSlf( true )
 		try {
 			slf.put( key, v )

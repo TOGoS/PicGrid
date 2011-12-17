@@ -1,4 +1,4 @@
-package togos.picgrid;
+package togos.blob.util;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.TestCase;
-import togos.mf.base.SimpleByteChunk;
-import togos.picgrid.io.ByteBlobInputStream;
+import togos.blob.SimpleByteChunk;
+import togos.blob.util.ByteBlobInputStream;
 
 public class ByteBlobInputStreamTest extends TestCase
 {

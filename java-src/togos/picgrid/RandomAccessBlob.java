@@ -2,7 +2,7 @@ package togos.picgrid;
 
 import java.io.Flushable;
 
-import togos.mf.value.ByteChunk;
+import togos.blob.ByteChunk;
 
 public interface RandomAccessBlob extends Flushable
 {

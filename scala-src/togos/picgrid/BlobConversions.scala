@@ -1,9 +1,12 @@
 package togos.picgrid
+
 import java.io.ByteArrayOutputStream
-import togos.mf.value.ByteChunk
-import togos.mf.value.ByteBlob
+
+import togos.blob.ByteChunk
+import togos.blob.ByteBlob
 import scala.collection.JavaConversions
-import togos.mf.base.SimpleByteChunk
+import togos.blob.SimpleByteChunk
+import togos.blob.SingleChunkByteBlob
 
 object BlobConversions
 {
@@ -27,7 +30,7 @@ object BlobConversions
 	implicit def byteBlobAsByteArray( b:ByteBlob ):Array[Byte] = {
 		if( b == null ) return null
 		
-		if( b.isInstanceOf[SimpleByteBlob] ) return b.asInstanceOf[SimpleByteBlob].chunk
+		if( b.isInstanceOf[SingleChunkByteBlob] ) return b.asInstanceOf[SingleChunkByteBlob].chunk
 		
 		val baos = new ByteArrayOutputStream()
 		for( c <- b ) {
@@ -48,7 +51,7 @@ object BlobConversions
 	
 	implicit def byteBlobAsByteChunk( b:ByteBlob ):ByteChunk = {
 		if( b == null ) return null
-		if( b.isInstanceOf[SimpleByteBlob] ) return b.asInstanceOf[SimpleByteBlob].chunk
+		if( b.isInstanceOf[SingleChunkByteBlob] ) return b.asInstanceOf[SingleChunkByteBlob].chunk
 		
 		return byteBlobAsByteArray( b )
 	}
@@ -56,15 +59,15 @@ object BlobConversions
 	//// To ByteBlob ////
 	
 	implicit def stringAsByteBlob( s:String ):ByteBlob = {
-		if( s == null ) null else new SimpleByteBlob( s )
+		if( s == null ) null else new SingleChunkByteBlob( s )
 	}
 	
 	implicit def byteArrayAsByteBlob( b:Array[Byte] ):ByteBlob = {
-		if( b == null ) null else new SimpleByteBlob(new SimpleByteChunk(b))
+		if( b == null ) null else new SingleChunkByteBlob(new SimpleByteChunk(b))
 	}
 	
 	implicit def byteChunkAsByteBlob( b:ByteChunk ):ByteBlob = {
-		if( b == null ) null else new SimpleByteBlob( b )
+		if( b == null ) null else new SingleChunkByteBlob( b )
 	}
 	
 	//// To string ////

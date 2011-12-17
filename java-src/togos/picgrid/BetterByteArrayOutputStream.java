@@ -2,8 +2,8 @@ package togos.picgrid;
 
 import java.io.ByteArrayOutputStream;
 
-import togos.mf.base.Util;
-import togos.mf.value.ByteChunk;
+import togos.blob.ByteChunk;
+import togos.blob.util.BlobUtil;
 
 /**
  * Extends ByteArrayOutputStream to provide direct access to the backing
@@ -32,10 +32,10 @@ public class BetterByteArrayOutputStream extends ByteArrayOutputStream
 	
 	public boolean equals( Object other ) {
 		if( !(other instanceof ByteChunk) ) return false;
-		return Util.equals(this, (ByteChunk)other);
+		return BlobUtil.equals(this, (ByteChunk)other);
 	}
 	
 	public int hashCode() {
-		return Util.hashCode(buf, 0, count);
+		return BlobUtil.hashCode(buf, 0, count);
 	}
 }

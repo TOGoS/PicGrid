@@ -3,8 +3,8 @@ package togos.picgrid.file
 import java.io.File
 import java.io.FileOutputStream
 import org.bitpedia.util.Base32
-import togos.mf.value.ByteBlob
-import togos.mf.value.ByteChunk
+import togos.blob.ByteBlob
+import togos.blob.ByteChunk
 import togos.picgrid.file.FileUtil.makeParentDirs
 import scala.collection.mutable.ListBuffer
 import togos.picgrid.BitprintDigest

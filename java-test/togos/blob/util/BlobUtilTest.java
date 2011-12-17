@@ -1,13 +1,14 @@
-package togos.picgrid;
+package togos.blob.util;
 
 import junit.framework.TestCase;
-import togos.mf.base.SimpleByteChunk;
-import togos.mf.value.ByteBlob;
+import togos.blob.ByteBlob;
+import togos.blob.SimpleByteChunk;
+import togos.blob.SingleChunkByteBlob;
 
 public class BlobUtilTest extends TestCase
 {
 	protected ByteBlob mkBlob( String content ) {
-		return new SimpleByteBlob( new SimpleByteChunk( content.getBytes() ) );
+		return new SingleChunkByteBlob( new SimpleByteChunk( content.getBytes() ) );
 	}
 	
 	public void testEquals() {

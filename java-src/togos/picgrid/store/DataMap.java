@@ -1,6 +1,6 @@
-package togos.picgrid;
+package togos.picgrid.store;
 
-import togos.mf.value.ByteChunk;
+import togos.blob.ByteChunk;
 
 public interface DataMap
 {

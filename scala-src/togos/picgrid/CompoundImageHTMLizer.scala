@@ -6,7 +6,7 @@ import togos.picgrid.image.CompoundImage
 import togos.picgrid.BlobConversions.stringAsByteBlob
 
 class CompoundImageHTMLizer(
-	val datastore:Datasink,
+	val datastore:BlobAutoStore,
 	val imageInfoExtractor:ImageInfoExtractor,
 	val gridRenderer:CompoundImageRasterizer,
 	val referencedUriCallback:(String=>Unit)

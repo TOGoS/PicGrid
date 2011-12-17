@@ -1,8 +1,8 @@
-package togos.picgrid;
+package togos.blob.util;
 
 import java.util.Iterator;
 
-class SingleItemIterator implements Iterator {
+public class SingleItemIterator implements Iterator {
 	protected boolean ended;
 	protected Object v;
 	public SingleItemIterator( Object v ) { this.v = v; }

@@ -16,7 +16,7 @@ import togos.picgrid.image.ImageInfoExtractor
 import togos.picgrid.image.ImageMagickCommands
 import togos.picgrid.image.ImageMagickCropResizer
 import togos.picgrid.file.SLF2FunctionCache
-import togos.mf.value.ByteChunk
+import togos.blob.ByteChunk
 
 @serializable
 class ImageInfo(
@@ -181,6 +181,21 @@ class RowlyGridificationMethod extends GridificationMethod
 	}
 }
 
+class MigratingSource[K,V]( val old:Function[K,V], val neu:Store[K,V]) extends Store[K,V]
+{
+	def apply( key:K ):V = {
+		var v = neu(key)
+		if( v != null ) return v
+		v = old(key)
+		if( v != null ) neu(key) = v
+		return v
+	}
+	
+	def update( key:K, value:V ) {
+		neu(key) = value
+	}
+}
+
 class BitmapGridificationMethod extends GridificationMethod
 {
 	def configString = "bitmap-default"
@@ -338,7 +353,7 @@ class BitmapGridificationMethod extends GridificationMethod
 
 class Gridifier(
 	val functionCache:FunctionCache,
-	val datastore:Datasink,
+	val datastore:BlobAutoStore,
 	val infoExtractor:ImageInfoExtractor,
 	val gridificationMethod:GridificationMethod
 ) {
@@ -419,7 +434,10 @@ object Gridifier
 {
 	def getCache( dir:String, name:String ):FunctionCache = {
 		if( dir != null ) {
-			new SLF2FunctionCache( new File(dir+"/"+name+".slf2") )
+			new MigratingSource(
+				new SLFFunctionCache( new File(dir+"/"+name+".slf") ),
+				new SLF2FunctionCache( new File(dir+"/"+name+".slf2") )
+			)
 		} else {
 			new MemoryFunctionCache()
 		}

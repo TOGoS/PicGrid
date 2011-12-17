@@ -5,9 +5,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Iterator;
 
-import togos.mf.value.ByteBlob;
-import togos.picgrid.BlobUtil;
-import togos.picgrid.io.InputStreamChunkIterator;
+import togos.blob.ByteBlob;
+import togos.blob.util.InputStreamChunkIterator;
+import togos.blob.util.BlobUtil;
 
 public class FileBlob implements ByteBlob
 {

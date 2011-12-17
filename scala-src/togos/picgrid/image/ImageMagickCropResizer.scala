@@ -8,8 +8,8 @@ import togos.picgrid.file.FileUtil.makeParentDirs
 import togos.picgrid.file.FSDatastore
 import togos.picgrid.file.FSSHA1Datastore
 import togos.picgrid.file.FileBlob
-import togos.picgrid.FunctionCache
 import togos.picgrid.CommandLine
+import togos.picgrid.FunctionCache
 import togos.picgrid.MemoryFunctionCache
 
 /**

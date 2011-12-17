@@ -1,15 +1,14 @@
 package togos.picgrid.file
 
+import java.io.Closeable
 import java.io.File
-import java.io.IOException
-import scala.collection.mutable.HashMap
-import togos.picgrid.BlobConversions.stringAsByteChunk
+import java.io.Flushable
+import togos.blob.ByteChunk
+import togos.picgrid.ComponentConversions.dataMapAsFunctionCache
 import togos.picgrid.FunctionCache
-import togos.mf.value.ByteChunk
 
-class SLF2FunctionCache( val cacheFile:File ) extends FunctionCache
+class SLF2FunctionCache( val cacheFile:File ) extends FunctionCache with Flushable with Closeable
 {
-	val slfCache = new HashMap[String,SimpleListFile]()
 	var slf:SimpleListFile2 = null
 	
 	protected def getSlf( allowCreate:Boolean ):SimpleListFile2 = synchronized {
@@ -22,33 +21,20 @@ class SLF2FunctionCache( val cacheFile:File ) extends FunctionCache
 		slf
 	}
 	
-	def apply( key:String ):ByteChunk = {
-		val slf = getSlf( false )
+	def apply( key:ByteChunk ):ByteChunk = {
+		val slf:FunctionCache = getSlf( false )
 		if( slf == null ) return null
-		try {
-			slf.get( key )
-		} catch {
-			case e : IOException =>
-				System.err.println("Warning: Exception when fetching '"+key+"' in "+cacheFile+": "+e.getMessage())
-				e.printStackTrace()
-				null
-		}
+		slf( key )
 	}
 	
-	def update( key:String, v:ByteChunk ) {
-		val slf = getSlf( true )
-		try {
-			slf.put( key, v )
-		} catch {
-			case e : IOException =>
-				System.err.println("Warning: Exception when adding '"+key+"' in "+cacheFile+": "+e.getMessage())
-				e.printStackTrace()
-		}
+	def update( key:ByteChunk, v:ByteChunk ) {
+		getSlf( true )( key ) = v
 	}
 	
-	def flush() = synchronized {
-		for( f <- slfCache.values ) {
-			f.flush()
-		}
+	def flush() { slf.flush() }
+	
+	def close() {
+		slf.close()
+		slf = null
 	}
 }
