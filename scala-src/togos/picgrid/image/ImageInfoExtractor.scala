@@ -15,28 +15,15 @@ import javax.imageio.stream.ImageInputStream
 import javax.imageio.stream.MemoryCacheImageInputStream
 import java.io.FileNotFoundException
 
-class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:BlobSource )
+object ImageInfoExtractor
 {
-	var dimensionCache = new Function[String,(Integer,Integer)] {
-		def apply( uri:String ):(Integer,Integer) = {
-			val str = imageDimensionCache( uri ):String
-			if( str == null ) return null
-			val parts = str.split(',')
-			(parts(0).toInt, parts(1).toInt)
-		}
-		
-		def update( uri:String, dims:(Integer,Integer) ) {
-			imageDimensionCache( uri ) = dims._1 + "," + dims._2
-		}
-	}
-	
 	val GIF_MAGIC:Integer = 0x47494638
 	val PNG_MAGIC:Integer = 0x89504E47
 	val JPG_MAGIC:Short = 0xFFD8.toShort
 	val BMP_MAGIC:Short = 0x424D
 	val COMP_MAGIC:Integer = 0x434F4D50 // "COMP" (as in "COMPOSITE-IMAGE")
 	
-	def getImageType( magic:Array[Byte] ):ImageFormat = {
+	def extractImageType( magic:Array[Byte] ):ImageFormat = {
 		val magicI:Integer =
 			((magic(0) & 0xFF) << 24) |
 			((magic(1) & 0xFF) << 16) |
@@ -58,10 +45,13 @@ class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:B
 		case _ =>
 		}
 		
+		val s = new String( magic )
+		if( s.startsWith("<htm") ) return ImageFormat.HTML
+		
 		return null
 	}
 	
-	def getImageDimensions( inputStream:InputStream, formatName:String ):(Integer,Integer) = {
+	def extractImageDimensions( inputStream:InputStream, formatName:String ):(Integer,Integer) = {
 		val readerIter = ImageIO.getImageReadersByFormatName(formatName)
 		if( readerIter.hasNext() ) {
 			val reader = readerIter.next().asInstanceOf[ImageReader]
@@ -73,7 +63,7 @@ class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:B
 		return (0,0)
 	}
 	
-	def getMagicNumber( blob:ByteBlob ):Array[Byte] = {
+	def extractMagicNumber( blob:ByteBlob ):Array[Byte] = {
 		val inputStream1 = new ByteBlobInputStream(blob.chunkIterator())
 		val magic = new Array[Byte](8)
 		inputStream1.read( magic )
@@ -81,8 +71,26 @@ class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:B
 		magic
 	}
 	
-	def getImageType( imageBlob:ByteBlob ):ImageFormat = {
-		getImageType( getMagicNumber(imageBlob) )
+	def extractImageType( imageBlob:ByteBlob ):ImageFormat = {
+		extractImageType( extractMagicNumber(imageBlob) )
+	}
+}
+
+import togos.picgrid.image.ImageInfoExtractor._
+
+class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:BlobSource )
+{
+	var dimensionCache = new Function[String,(Integer,Integer)] {
+		def apply( uri:String ):(Integer,Integer) = {
+			val str = imageDimensionCache( uri ):String
+			if( str == null ) return null
+			val parts = str.split(',')
+			(parts(0).toInt, parts(1).toInt)
+		}
+		
+		def update( uri:String, dims:(Integer,Integer) ) {
+			imageDimensionCache( uri ) = dims._1 + "," + dims._2
+		}
 	}
 	
 	def getImageType( imageUri:String ):ImageFormat = {
@@ -90,7 +98,7 @@ class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:B
 		if( imageBlob == null ) {
 			throw new FileNotFoundException("Couldn't find image to get format from: "+imageUri)
 		}
-		getImageType( imageBlob )
+		extractImageType( imageBlob )
 	}
 	
 	def getImageDimensions( imageUri:String ):(Integer,Integer) = {
@@ -101,15 +109,15 @@ class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:B
 				throw new FileNotFoundException("Couldn't find image to get dimensions from: "+imageUri)
 			}
 			
-			val magic = getMagicNumber(imageBlob)
-			val format = getImageType( magic )
+			val magic = extractMagicNumber(imageBlob)
+			val format = extractImageType( magic )
 			if( format == null ) {
 				System.err.println("Couldn't determine type of "+imageUri+": "+magic(0)+","+magic(1)+","+magic(2)+","+magic(3))
 				return null
 			}
 			
 			val inputStream = new ByteBlobInputStream(imageBlob.chunkIterator())
-			dims = getImageDimensions(inputStream, format.name)
+			dims = extractImageDimensions(inputStream, format.name)
 			inputStream.close()
 			dimensionCache(imageUri) = dims
 		}

@@ -11,7 +11,7 @@ import togos.picgrid.BitprintDigest
 
 class FSSHA1Datastore( val dir:File, val extraReadDirs:List[String]=List() ) extends FSDatastore
 {
-	val readDirs = dir.getPath() :: extraReadDirs
+	val readDirs = if(dir == null) extraReadDirs else dir.getPath() :: extraReadDirs
 	
 	val BITPRINT_REGEX = """^urn:bitprint:([^\.]+)\.([^\.]+)$""".r 
 	
