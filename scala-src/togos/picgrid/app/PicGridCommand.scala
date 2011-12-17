@@ -41,28 +41,22 @@ class BlobFunctionCallable( val blobFunction:(String=>ByteBlob) ) extends Callab
 object WebServerCommand
 {
 	def main( args:Array[String] ) {
-		val repoPaths = new ArrayBuffer[String]
+		val datastorePaths = new ArrayBuffer[String]
 		
 		var i = 0
 		while( i < args.length ) {
 			if( "-repo".equals(args(i)) ) {
 				i += 1
-				repoPaths += args(i)
+				for( f <- new File(args(i) + "/data" ).listFiles ) {
+					if( f.isDirectory() ) {
+						datastorePaths += f.getPath()
+					}
+				}
 			} else {
 				System.err.println("Unrecognised arument: "+args(i) )
 				System.exit(1)
 			}
 			i += 1
-		}
-		
-		val datastorePaths = new ArrayBuffer[String]
-		for( repoPath <- repoPaths ) {
-			for( f <- new File(repoPath + "/data" ).listFiles ) {
-				if( f.isDirectory() ) {
-					System.err.println( "Datastore " + f.getPath() )
-					datastorePaths += f.getPath()
-				}
-			}
 		}
 		
 		val resourceCallable = new BlobFunctionCallable(new WebPathToURNSourceAdapter(new FSSHA1Datastore( null, datastorePaths.toList )))
@@ -77,11 +71,22 @@ object PicGridCommand {
 	type Command = { def main( args:Array[String] ):Unit }
 	
 	def main( args:Array[String] ) {
-		val cmdName = args(0)
-		val cmd:Command = cmdName match {
-			case "compose" => GridifyCommand
-			case "webserve" => WebServerCommand
+		if( args.length == 0 ) {
+			System.err.println("No sub-command given")
+			System.exit(1)
+		}
+		
+		val subCmdName = args(0)
+		val subCmdArgs = args.slice(1,args.length)
+		subCmdName match {
+		case "compose" =>
+			GridifyCommand.main(subCmdArgs)
+		case "webserve" =>
+			WebServerCommand.main(subCmdArgs)
+		case _ =>
+			System.err.println("Unrecognised command: "+subCmdName)
+			System.exit(1)
+			null
 		} 
-		cmd.main( args.slice(1,args.length) )
 	}
 }
