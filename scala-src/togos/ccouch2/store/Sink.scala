@@ -1,4 +1,4 @@
-package togos.picgrid.store
+package togos.ccouch2.store
 
 trait Sink[A,B]
 {

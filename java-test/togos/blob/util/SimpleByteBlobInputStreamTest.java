@@ -6,7 +6,6 @@ import junit.framework.TestCase;
 import togos.blob.ByteBlob;
 import togos.blob.SimpleByteChunk;
 import togos.blob.SingleChunkByteBlob;
-import togos.blob.util.ByteBlobInputStream;
 
 public class SimpleByteBlobInputStreamTest extends TestCase
 {

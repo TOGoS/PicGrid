@@ -2,8 +2,9 @@ package togos
 
 import togos.blob.ByteBlob
 import togos.blob.ByteChunk
-import togos.picgrid.store.AutoStore
-import togos.picgrid.store.Sink
+import togos.ccouch2.store.AutoStore
+import togos.ccouch2.store.Sink
+import togos.ccouch2.store.Store
 
 package object picgrid
 {

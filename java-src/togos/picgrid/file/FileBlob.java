@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import togos.blob.ByteBlob;
-import togos.blob.util.InputStreamChunkIterator;
 import togos.blob.util.BlobUtil;
+import togos.blob.util.InputStreamChunkIterator;
 
 public class FileBlob implements ByteBlob
 {

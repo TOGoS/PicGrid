@@ -2,8 +2,8 @@ package togos.blob;
 
 import java.util.Iterator;
 
-import togos.blob.util.SingleItemIterator;
 import togos.blob.util.BlobUtil;
+import togos.blob.util.SingleItemIterator;
 
 public final class SingleChunkByteBlob implements ByteBlob
 {

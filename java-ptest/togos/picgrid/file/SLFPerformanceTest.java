@@ -7,8 +7,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
-import togos.mf.base.SimpleByteChunk;
-import togos.mf.value.ByteChunk;
+import togos.blob.ByteChunk;
+import togos.blob.SimpleByteChunk;
 
 public class SLFPerformanceTest
 {

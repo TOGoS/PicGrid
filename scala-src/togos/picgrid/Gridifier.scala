@@ -17,6 +17,7 @@ import togos.picgrid.image.ImageMagickCommands
 import togos.picgrid.image.ImageMagickCropResizer
 import togos.picgrid.file.SLF2FunctionCache
 import togos.blob.ByteChunk
+import togos.ccouch2.store.Store
 
 @serializable
 class ImageInfo(

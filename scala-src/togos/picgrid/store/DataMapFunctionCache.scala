@@ -1,7 +1,7 @@
-package togos.picgrid
+package togos.picgrid.store
 
 import togos.blob.ByteChunk
-import togos.picgrid.store.DataMap
+import togos.picgrid.FunctionCache
 
 case class DataMapFunctionCache( val dataMap:DataMap ) extends FunctionCache
 {

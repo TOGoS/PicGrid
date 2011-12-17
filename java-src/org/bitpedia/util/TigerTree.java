@@ -36,7 +36,7 @@ public class TigerTree extends MessageDigest {
 
     /** Blocks handled until now */
     long blockCount;
-    
+
     /**
      * Constructor
      */
@@ -136,9 +136,6 @@ public class TigerTree extends MessageDigest {
         }
     }
 
-    /**
-     * 
-     */
     protected void composeNodes() {
         byte[] right = (byte[]) nodes.removeLast(); 
         byte[] left = (byte[]) nodes.removeLast();
@@ -147,6 +144,5 @@ public class TigerTree extends MessageDigest {
         tiger.update(left);
         tiger.update(right);
         nodes.add(tiger.digest());
-        
     }
 }
