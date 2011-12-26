@@ -150,7 +150,7 @@ public class SimpleListFile2Test extends TestCase
 			final int offset = i*insertsPerThread;
 			threads[i] = new Thread() {
 				public void run() {
-					slf.bulkPut( keys, values, offset, insertsPerThread );
+					slf.multiPut( keys, values, offset, insertsPerThread );
 				};
 			};
 			threads[i].start();

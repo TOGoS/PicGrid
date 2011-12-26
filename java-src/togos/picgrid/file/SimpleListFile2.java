@@ -11,6 +11,7 @@ import togos.blob.ByteChunk;
 import togos.blob.SimpleByteChunk;
 import togos.picgrid.RandomAccessBlob;
 import togos.picgrid.store.DataMap;
+import togos.picgrid.store.VectorDataMap;
 
 /**
  * Yet another key-value store, designed for speed and simplicity.
@@ -44,7 +45,7 @@ import togos.picgrid.store.DataMap;
  * 
  * Chunks in the recycle list have no format; the data they contain is garbage.
  */
-public class SimpleListFile2 implements DataMap, Flushable, Closeable
+public class SimpleListFile2 implements DataMap, VectorDataMap, Flushable, Closeable
 {
 	static final byte[] slf2 = {'S','L','F','2'};
 	static final byte[] indx = {'I','N','D','X'};
@@ -300,7 +301,8 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 		ByteChunk pair = encodePair( oldList, key, value );
 		long newListOffset = blob.getSize();
 		// TODO: May want to adjust the location of the new chunk
-		// to avoid crossing 4kB boundaries.
+		// to avoid crossing 4kB boundaries for possible slight performance
+		// improvement on certain filesystems?
 		blob.put( newListOffset, pair );
 		putLong( indexPos, chunkRef(newListOffset, pair.getSize()) );
 	}
@@ -327,7 +329,7 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 		}
 	}
 	
-	public void multiPut( ByteChunk[] keys, ByteChunk[] values, int offset, int count ) {
+	public void bulkPut1( ByteChunk[] keys, ByteChunk[] values, int offset, int count ) {
 		long[] indexPos = new long[count];
 		for( int i=0; i<count; ++i ) {
 			indexPos[i] = indexPos(keys[i]); 
@@ -353,11 +355,11 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 	
 	/**
 	 * Writes new data to the file using one read and two writes.
-	 * Can be more efficient than multiPut when
+	 * Can be more efficient than bulkPut1 when
 	 * - a large number of puts can be combined, and
 	 * - the index is small.
 	 */
-	public void bulkPut( ByteChunk[] keys, ByteChunk[] values, int offset, int count ) {
+	public void bulkPut2( ByteChunk[] keys, ByteChunk[] values, int offset, int count ) {
 		int size = 0;
 		int[] sizes = new int[count];
 		int[] offsets = new int[count];
@@ -428,10 +430,14 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 	public void smartPut( ByteChunk[] keys, ByteChunk[] values, int offset, int count ) {
 		if( (fileChannel == null && indexSize >  8000 * count) ||
 			(fileChannel != null && indexSize > 16000 * count) ) {
-			multiPut( keys, values, offset, count );
+			bulkPut1( keys, values, offset, count );
 		} else {
-			bulkPut( keys, values, offset, count );
+			bulkPut2( keys, values, offset, count );
 		}
+	}
+	
+	public void multiPut( ByteChunk[] keys, ByteChunk[] values, int offset, int count ) {
+		smartPut( keys, values, offset, count );
 	}
 	
 	public ByteChunk get( ByteChunk key ) {
@@ -470,6 +476,12 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 			} catch( IOException e ) {
 				throw new RuntimeException(e);
 			}
+		}
+	}
+	
+	public void multiGet( ByteChunk[] keys, ByteChunk[] values, int offset, int count ) {
+		for( int i=0; i<count; ++i ) {
+			values[offset+i] = get(keys[offset+i]);
 		}
 	}
 	
