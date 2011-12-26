@@ -57,6 +57,8 @@ public class SimpleListFile {
 		public int type = 0;
 	}
 	
+	protected static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+	
 	protected static char[] hexChars = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 	
 	protected static String intToHex(int i) {
@@ -449,7 +451,7 @@ public class SimpleListFile {
 	//// List manipulation ////
 	
 	public Chunk createList() throws IOException {
-		Chunk newChunk = addChunk( 0, 0, CHUNK_TYPE_LIST, null );
+		Chunk newChunk = addChunk( 0, 0, CHUNK_TYPE_LIST, EMPTY_BYTE_ARRAY );
 		setChunkListNext(newChunk, newChunk.offset);
 		setChunkListPrev(newChunk, newChunk.offset);
 		return newChunk;
@@ -514,7 +516,7 @@ public class SimpleListFile {
 			offset += 4;  offset += partLength;
 			++pi;
 			partLength = getIntAt(offset);
-			if( partLength == 0 ) return null;
+			if( partLength == 0 ) return EMPTY_BYTE_ARRAY;
 		}
 		return readBytes(partLength, "getPairPart");
 	}

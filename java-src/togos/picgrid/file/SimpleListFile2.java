@@ -57,6 +57,7 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 	final FileChannel fileChannel;
 	
 	long indexOffset;
+	int indexSize; // in bytes, not entries! Used to load the entire thing during bulk operations
 	int indexMask;
 	int reclRefOffset;
 	
@@ -68,10 +69,9 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 			fileChannel = null;
 		}
 		
-		if( defaultIndexSizePower < 0 || defaultIndexSizePower > 16 ) {
+		if( defaultIndexSizePower < 0 || defaultIndexSizePower > 17 ) {
 			throw new RuntimeException("Index size power should be 0-17.  Given: "+defaultIndexSizePower);
 		}
-		
 		
 		init( defaultIndexSizePower );
 	}
@@ -152,11 +152,16 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 		return (1<<sizePower)-1;
 	}
 	
+	protected static final int indexSize( int sizePower ) {
+		return (1<<sizePower)<<3;
+	}
+	
 	protected void init( int defaultIndexSizePower ) {
 		int headerSize = 32; // "SLF2" + "INDX" + chunkRef + "RECY" + chunkRef + "EHDR"
 		if( blob.getSize() == 0 ) {
 			indexOffset = headerSize;
 			indexMask = indexMask(defaultIndexSizePower);
+			indexSize = indexSize(defaultIndexSizePower);
 			reclRefOffset = 20; 
 					
 			int headerAndIndexSize = headerSize + ((1 << defaultIndexSizePower) << 3);
@@ -183,7 +188,9 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 				if( equals(indx, buf, o) ) {
 					long indxRef = decodeLong( buf, o+4 );
 					indexOffset = refOffset(indxRef);
-					indexMask = indexMask(refSize(indxRef));
+					int indexSizePower = refSize(indxRef);
+					indexMask = indexMask(indexSizePower);
+					indexSize = indexSize(indexSizePower);
 					o += 12;
 				} else if( equals(recl, buf, o) ) {
 					reclRefOffset = o+4;
@@ -246,23 +253,57 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 		return decodeLong( chunk.getBuffer(), chunk.getOffset() );
 	}
 	
+	/**
+	 * Return the byte position within the index chunk of the reference
+	 * in the index to the specified key
+	 */
+	protected int indexSubPos( ByteChunk key ) {
+		return (key.hashCode() & indexMask) << 3;
+	}
 	
-	
+	/**
+	 * Return the byte position within the file of the reference in
+	 * the index to the specified key
+	 */
 	protected long indexPos( ByteChunk key ) {
-		return ((key.hashCode() & indexMask) << 3) + indexOffset;
+		return indexSubPos(key) + indexOffset;
 	}
 	
-	protected ByteChunk encodePair( long next, ByteChunk key, ByteChunk value ) {
-		byte[] newBuf = new byte[16+key.getSize()+value.getSize()];
-		encodeLong( next, newBuf, 0 );
-		copy( pair, newBuf, 8 );
-		encodeShort( (short)key.getSize(), newBuf, 12 );
-		encodeShort( (short)value.getSize(), newBuf, 14 );
-		copy( key.getBuffer(), key.getOffset(), newBuf, 16, key.getSize() );
-		copy( value.getBuffer(), key.getOffset(), newBuf, 16+key.getSize(), value.getSize() );
-		return new SimpleByteChunk( newBuf );
+	protected static final int encodedPairSize( ByteChunk key, ByteChunk value ) {
+		return 16+key.getSize()+value.getSize();
 	}
 	
+	protected static final void encodePairData( ByteChunk key, ByteChunk value, byte[] buffer, int offset ) {
+		copy( pair, buffer, offset+8 );
+		encodeShort( (short)key.getSize(), buffer, offset+12 );
+		encodeShort( (short)value.getSize(), buffer, offset+14 );
+		copy( key.getBuffer(), key.getOffset(), buffer, offset+16, key.getSize() );
+		copy( value.getBuffer(), key.getOffset(), buffer, offset+16+key.getSize(), value.getSize() );
+	}
+	
+	protected static final void encodePair( long next, ByteChunk key, ByteChunk value, byte[] buffer, int offset ) {
+		encodeLong( next, buffer, offset+0 );
+		encodePairData( key, value, buffer, offset );
+	}
+	
+	protected static final ByteChunk encodePair( long next, ByteChunk key, ByteChunk value ) {
+		byte[] buffer = new byte[16+key.getSize()+value.getSize()];
+		encodePair( next, key, value, buffer, 0 );
+		return new SimpleByteChunk( buffer );
+	}
+	
+	//// 
+	
+	protected void _putWithoutLocking( long indexPos, ByteChunk key, ByteChunk value ) {
+		long oldList = getLong( indexPos );
+		
+		ByteChunk pair = encodePair( oldList, key, value );
+		long newListOffset = blob.getSize();
+		// TODO: May want to adjust the location of the new chunk
+		// to avoid crossing 4kB boundaries.
+		blob.put( newListOffset, pair );
+		putLong( indexPos, chunkRef(newListOffset, pair.getSize()) );
+	}
 	
 	//// The public interface ////
 	
@@ -271,60 +312,164 @@ public class SimpleListFile2 implements DataMap, Flushable, Closeable
 		long indexPos = indexPos(key);
 		
 		FileLock fl = null;
-		try {
+		synchronized( this ) {
 			try {
-				if( fileChannel != null ) fl = fileChannel.lock(0, Long.MAX_VALUE, false);
-				
-				long oldList = getLong( indexPos );
-			
-				ByteChunk pair = encodePair( oldList, key, value );
-				long newListOffset = blob.getSize();
-				// TODO: May want to adjust the location of the new chunk
-				// to avoid crossing 4kB boundaries.
-				blob.put( newListOffset, pair );
-				putLong( indexPos, chunkRef(newListOffset, pair.getSize()) );
-			} finally {
-				if( fl != null ) fl.release();
+				try {
+					if( fileChannel != null ) fl = fileChannel.lock(0, Long.MAX_VALUE, false);
+					
+					_putWithoutLocking( indexPos, key, value );
+				} finally {
+					if( fl != null ) fl.release();
+				}
+			} catch( IOException e ) {
+				throw new RuntimeException(e);
 			}
-		} catch( IOException e ) {
-			throw new RuntimeException(e);
 		}
 	}
-
+	
+	public void multiPut( ByteChunk[] keys, ByteChunk[] values, int offset, int count ) {
+		long[] indexPos = new long[count];
+		for( int i=0; i<count; ++i ) {
+			indexPos[i] = indexPos(keys[i]); 
+		}
+		
+		FileLock fl = null;
+		synchronized( this ) {
+			try {
+				try {
+					if( fileChannel != null ) fl = fileChannel.lock(0, Long.MAX_VALUE, false);
+					
+					for( int i=0; i<count; ++i ) {
+						_putWithoutLocking( indexPos[i], keys[i], values[i] );
+					}
+				} finally {
+					if( fl != null ) fl.release();
+				}
+			} catch( IOException e ) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+	
+	/**
+	 * Writes new data to the file using one read and two writes.
+	 * Can be more efficient than multiPut when
+	 * - a large number of puts can be combined, and
+	 * - the index is small.
+	 */
+	public void bulkPut( ByteChunk[] keys, ByteChunk[] values, int offset, int count ) {
+		int size = 0;
+		int[] sizes = new int[count];
+		int[] offsets = new int[count];
+		int[] indexSubPos = new int[count];
+		for( int i=0; i<count; ++i ) {
+			offsets[i] = size; 
+			size += (sizes[i] = encodedPairSize( keys[offset+i], values[offset+i] ));
+			indexSubPos[i] = indexSubPos(keys[offset+i]);
+		}
+		byte[] buffer = new byte[size];
+		
+		for( int i=0; i<count; ++i ) {
+			encodePairData( keys[offset+i], values[offset+i], buffer, offsets[i] );
+		}
+		
+		// Now that all the easy stuff's out of the way, do the I/O stuff
+		
+		FileLock fl = null;
+		synchronized( this ) {
+			try {
+				try {
+					if( fileChannel != null ) fl = fileChannel.lock(0, Long.MAX_VALUE, false);
+					
+					long newDataOffset = blob.getSize();
+					
+					// Load entire index
+					ByteChunk index = blob.get( indexOffset, indexSize );
+					for( int i=0; i<count; ++i ) {
+						// Copy old list reference into new data
+						copy( index.getBuffer(), index.getOffset()+indexSubPos[i], buffer, offsets[i], 8 );
+						// Replace old list reference with reference to new chunk
+						encodeLong( chunkRef( newDataOffset+offsets[i], sizes[i] ), index.getBuffer(), index.getOffset()+indexSubPos[i] );
+					}
+					
+					// Save new data
+					blob.put( newDataOffset, new SimpleByteChunk(buffer) );
+					
+					// Save entire index
+					blob.put( indexOffset, index );
+				} finally {
+					if( fl != null ) fl.release();
+				}
+			} catch( IOException e ) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+	
+	/**
+	 * Attempts to do multiple puts using the most efficient method
+	 * according to some heuristic.
+	 * 
+	 * Based on testing on my 64-bit Dell running Windows 7, bulkPut and
+	 * multiple puts are about the same efficiency at:
+	 * 
+	 * Index length
+	 *      | Batch size (without locking)
+	 *      |     |    Batch size (with locking)
+	 *      |     |     |
+	 *	65536    64    32
+	 *  32768    32    16
+	 *  16384    10		6
+	 *  
+	 * So it seems putAll seems to stop being worthwhile when
+	 *  index length > 1000 * batch size (without locking), or
+	 *  index length > 2000 * batch size (with locking)
+	 */
+	public void smartPut( ByteChunk[] keys, ByteChunk[] values, int offset, int count ) {
+		if( (fileChannel == null && indexSize >  8000 * count) ||
+			(fileChannel != null && indexSize > 16000 * count) ) {
+			multiPut( keys, values, offset, count );
+		} else {
+			bulkPut( keys, values, offset, count );
+		}
+	}
+	
 	public ByteChunk get( ByteChunk key ) {
 		long indexPos = indexPos(key);
 		
 		FileLock fl = null;
-		try {
+		synchronized( this ) {
 			try {
-				if( fileChannel != null ) fl = fileChannel.lock(0, Long.MAX_VALUE, true);
-				
-				long chunkOffset = getLong( indexPos );
-				while( chunkOffset != 0 ) {
-					ByteChunk c = getChunk( chunkOffset );
-					if( pairMatches( c, key ) ) {
-						ByteChunk v = pairValue( chunkOffset, c );
-						if( v != null ) return v;
+				try {
+					if( fileChannel != null ) fl = fileChannel.lock(0, Long.MAX_VALUE, true);
+					
+					long chunkOffset = getLong( indexPos );
+					while( chunkOffset != 0 ) {
+						ByteChunk c = getChunk( chunkOffset );
+						if( pairMatches( c, key ) ) {
+							ByteChunk v = pairValue( chunkOffset, c );
+							if( v != null ) return v;
+						}
+						chunkOffset = next(c);
 					}
-					chunkOffset = next(c);
+					
+					return null;
+				} finally {
+					if( fl != null ) {
+						fl.release();
+						// On Windows 7 at least, this seems to be sufficient to
+						// constructively work on the same file from multiple processes
+						// even though the file will be reported by `dir` with its
+						// old size until it is closed by a process.
+						//
+						// i.e. force(...) does not seem necessary for
+						// synchronization between processes, which is good because
+						// it's terribly slow.
+					}
 				}
-				
-				return null;
-			} finally {
-				if( fl != null ) {
-					fl.release();
-					// On Windows 7 at least, this seems to be sufficient to
-					// constructively work on the same file from multiple processes
-					// even though the file will be reported by `dir` with its
-					// old size until it is closed by a process.
-					//
-					// i.e. force(...) does not seem necessary for
-					// synchronization between processes, which is good because
-					// it's terribly slow.
-				}
+			} catch( IOException e ) {
+				throw new RuntimeException(e);
 			}
-		} catch( IOException e ) {
-			throw new RuntimeException(e);
 		}
 	}
 	
