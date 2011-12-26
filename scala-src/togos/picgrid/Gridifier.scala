@@ -494,8 +494,8 @@ object Gridifier
 			throw new RuntimeException("Must specify a target")
 		}
 		
-		var resource:Process = null
-		var refWriter:Writer = null
+		var refLogProcess:Process = null
+		var refLogWriter:Writer = null
 		val refLogger:String=>Unit = if( refStoragePath == null ) {
 			((a:String) => {})
 		} else if( refStoragePath.equals("-") ) {
@@ -503,12 +503,12 @@ object Gridifier
 		} else if( refStoragePath.startsWith("|") ) {
 			val command = refStoragePath.substring(1).trim()
 			((a:String) => {
-				if( refWriter == null ) {
-					resource = Runtime.getRuntime().exec(command)
-					refWriter = new OutputStreamWriter( resource.getOutputStream() )
+				if( refLogWriter == null ) {
+					refLogProcess = Runtime.getRuntime().exec(command)
+					refLogWriter = new OutputStreamWriter( refLogProcess.getOutputStream() )
 					new Thread() {
 						override def run() {
-							val is = resource.getInputStream()
+							val is = refLogProcess.getInputStream()
 							var z = 0
 							val buf = new Array[Byte](65536)
 							while( z != -1 ) {
@@ -519,16 +519,16 @@ object Gridifier
 						}
 					}.start()
 				}
-				refWriter.write( a + "\n" )
+				refLogWriter.write( a + "\n" )
 			})
 		} else {
 			((a:String) => {
-				if( refWriter == null ) {
+				if( refLogWriter == null ) {
 					val refFile:File = new File(refStoragePath)
 					FileUtil.makeParentDirs( refFile )
-					refWriter = new FileWriter( refFile )
+					refLogWriter = new FileWriter( refFile )
 				}
-				refWriter.write( a + "\n" )
+				refLogWriter.write( a + "\n" )
 			})
 		}
 		
@@ -570,7 +570,7 @@ object Gridifier
 		}
 		System.out.println( pageUri );
 		
-		if( refWriter != null ) refWriter.close()
-		if( resource != null ) resource.waitFor()
+		if( refLogWriter != null ) refLogWriter.close()
+		if( refLogProcess != null ) refLogProcess.waitFor()
 	}
 }
