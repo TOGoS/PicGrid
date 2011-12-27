@@ -9,6 +9,11 @@ import java.util.concurrent.BlockingQueue;
 import togos.blob.ByteChunk;
 import togos.service.Service;
 
+/**
+ * DataMap that saves data to a backing VectorDataMap asynchronously.
+ * Data that has been 'put' but not yet saved is still available using
+ * a temporary cache.
+ */
 public class AsyncDataMap implements DataMap, Service, Runnable
 {
 	final static class KV {
