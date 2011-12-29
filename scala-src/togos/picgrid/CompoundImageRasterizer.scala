@@ -28,6 +28,7 @@ class CompoundImageRasterizer(
 			throw new Exception("Couldn't determine type of "+imageUri+" to rasterize")
 		}
 		if( imageType.isRaster ) return imageUri
+		
 		if( imageType == ImageFormat.COMPOSITE ) {
 			var rasterizedUri:String = functionCache( imageUri )
 			if( rasterizedUri == null ) {

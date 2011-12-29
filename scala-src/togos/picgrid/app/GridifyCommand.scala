@@ -110,6 +110,7 @@ object GridifyCommand
 					}.start()
 				}
 				refWriter.write( a + "\n" )
+				refWriter.flush()
 			})
 		} else {
 			((a:String) => {
@@ -155,12 +156,16 @@ object GridifyCommand
 		val pageUri = htmlizer.pagify( cinfo.uri )
 		refLogger( pageUri )
 		
-		if( verbose ) {
-			System.out.println( "# Page" )
-		}
+		if( verbose ) System.out.println( "# Page" )
 		System.out.println( pageUri );
 		
 		if( refWriter != null ) refWriter.close()
 		if( resource != null ) resource.waitFor()
+		
+		if( verbose ) {
+			System.out.println( "# Page (again, in case it scrolled away)" )
+			System.out.println( pageUri );
+		}
+		
 	}
 }

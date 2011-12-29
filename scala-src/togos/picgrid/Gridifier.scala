@@ -366,6 +366,9 @@ class Gridifier(
 	def getDirEntries( uri:String ):List[DirectoryEntry] = {
 		val xRdfSubjectRegex(blobUri) = uri
 		val rdfBlob = datastore(blobUri)
+		if( rdfBlob == null ) {
+			throw new Exception("Cannot find blob "+uri+" to parse directory entries from.");
+		}
 		RDFDirectoryParser.parseDirectory( rdfBlob )
 	}
 	
@@ -431,146 +434,5 @@ class Gridifier(
 			functionCache( cacheKey ) = SerializationUtil.serialize( res )
 			res
 		}
-	}
-}
-object Gridifier
-{
-	def getCache( dir:String, name:String ):FunctionCache = {
-		if( dir != null ) {
-			new MigratingSource(
-				new SLFFunctionCache( new File(dir+"/"+name+".slf") ),
-				new SLF2FunctionCache( new File(dir+"/"+name+".slf2") )
-			)
-		} else {
-			new MemoryFunctionCache()
-		}
-	}
-	
-	def main( args:Array[String] ) {
-		var datastoreDir:String = null
-		var datasources:ListBuffer[String] = new ListBuffer[String]()
-		var functionCacheDir:String = null
-		var verbose = false
-		var i = 0
-		var target:String = null
-		var refStoragePath:String = null
-		while( i < args.length ) {
-			args(i) match {
-				case "-v" =>
-					verbose = true
-				case "-convert-path" =>
-					i += 1
-					ImageMagickCommands.convertPath = args(i)
-				case "-function-cache-dir" =>
-					i += 1
-					functionCacheDir = args(i)
-				case "-datastore" =>
-					i += 1
-					datastoreDir = args(i) 
-				case "-datasource" =>
-					i += 1
-					datasources += args(i)
-				case "-ms-datasource" => // Multi-sector datasource (e.g. ccouch/data)
-					i += 1
-					val msd = new File(args(i))
-					for( f <- msd.listFiles() ) if( f.isDirectory() ) {
-						datasources += f.getPath();
-					}
-				case "-resource-log" =>
-					i += 1
-					refStoragePath = args(i)
-				case arg if !arg.startsWith("-") =>
-					target = arg
-				case arg => throw new RuntimeException("Unrecognised argument: "+arg)
-			}
-			i += 1
-		}
-		
-		if( datastoreDir == null ) {
-			throw new RuntimeException("No -datastore directory specified")
-		}
-		val datastore = new FSSHA1Datastore(new File(datastoreDir), datasources.toList)
-		if( target == null ) {
-			throw new RuntimeException("Must specify a target")
-		}
-		
-		var refLogProcess:Process = null
-		var refLogWriter:Writer = null
-		val refLogger:String=>Unit = if( refStoragePath == null ) {
-			((a:String) => {})
-		} else if( refStoragePath.equals("-") ) {
-			((a:String) => System.out.println(a) )
-		} else if( refStoragePath.startsWith("|") ) {
-			val command = refStoragePath.substring(1).trim()
-			((a:String) => {
-				if( refLogWriter == null ) {
-					refLogProcess = Runtime.getRuntime().exec(command)
-					refLogWriter = new OutputStreamWriter( refLogProcess.getOutputStream() )
-					new Thread() {
-						override def run() {
-							val is = refLogProcess.getInputStream()
-							var z = 0
-							val buf = new Array[Byte](65536)
-							while( z != -1 ) {
-								z = is.read( buf )
-								if( z > 0 ) System.out.write( buf, 0, z )
-							}
-							is.close()
-						}
-					}.start()
-				}
-				refLogWriter.write( a + "\n" )
-			})
-		} else {
-			((a:String) => {
-				if( refLogWriter == null ) {
-					val refFile:File = new File(refStoragePath)
-					FileUtil.makeParentDirs( refFile )
-					refLogWriter = new FileWriter( refFile )
-				}
-				refLogWriter.write( a + "\n" )
-			})
-		}
-		
-		val imageInfoExtractor = new ImageInfoExtractor( getCache(functionCacheDir, "image-dimensions"), datastore )
-		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert )
-		val gridificationMethod = new RowlyGridificationMethod
-		val gridifier = new Gridifier( getCache(functionCacheDir, "gridification"), datastore, imageInfoExtractor, gridificationMethod )
-		val rasterizer:(String=>String) = new CompoundImageRasterizer( getCache(functionCacheDir, "rasterize"), datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
-		val loggingRasterizer = { a:String =>
-			val res = rasterizer(a)
-			refLogger(res)
-			res
-		}
-		
-		val htmlizer = new CompoundImageHTMLizer( datastore, imageInfoExtractor, rasterizer, refLogger )
-		
-		val centry = gridifier.gridifyDir( target, null )
-		if( centry == null ) {
-			System.err.println("No images found!")
-			return
-		}
-		
-		val cinfo = centry.info
-		
-		if( verbose ) {
-			System.out.println( "# Compound image URI" )
-			System.out.println( cinfo.uri )
-			
-			val rasterizationUri = rasterizer( cinfo.uri )
-			System.out.println( "# Rasterization" )
-			System.out.println( rasterizationUri )
-		}
-		
-		val pageUri = htmlizer.pagify( cinfo.uri )
-		refLogger( pageUri )
-		
-		if( verbose ) {
-			System.out.println( "# Page" )
-		}
-		System.out.println( pageUri );
-		
-		if( refLogWriter != null ) refLogWriter.close()
-		if( refLogProcess != null ) refLogProcess.waitFor()
 	}
 }
