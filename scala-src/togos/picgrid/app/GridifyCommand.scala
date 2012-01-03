@@ -134,7 +134,7 @@ object GridifyCommand
 			res
 		}
 		
-		val htmlizer = new CompoundImageHTMLizer( datastore, imageInfoExtractor, rasterizer, refLogger )
+		val htmlizer = new CompoundImageHTMLizer( getCache(functionCacheDir, "htmlization"), datastore, imageInfoExtractor, rasterizer, refLogger )
 		
 		val centry = gridifier.gridifyDir( target, null )
 		if( centry == null ) {

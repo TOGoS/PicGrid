@@ -4,8 +4,11 @@ import togos.picgrid.image.ImageInfoExtractor
 import togos.picgrid.image.ImageFormat
 import togos.picgrid.image.CompoundImage
 import togos.picgrid.BlobConversions.stringAsByteBlob
+import togos.picgrid.BlobConversions.stringAsByteChunk
+import togos.picgrid.BlobConversions.byteChunkAsString
 
 class CompoundImageHTMLizer(
+	val functionCache:FunctionCache,
 	val datastore:BlobAutoStore,
 	val imageInfoExtractor:ImageInfoExtractor,
 	val gridRenderer:(String=>String),
@@ -67,6 +70,9 @@ class CompoundImageHTMLizer(
 	}
 	
 	def pagify( imageUri:String ):String = {
+		var htmlUrn = functionCache(imageUri)
+		if( htmlUrn != null ) return htmlUrn 
+		
 		val imageType = imageInfoExtractor.getImageType(imageUri)
 		if( imageType.isRaster ) return imageUri
 		
@@ -80,6 +86,8 @@ class CompoundImageHTMLizer(
 		
 		val html = header(ci) + imageDiv( rasterizedUrl, ci ) + footer( ci )
 		
-		datastore.store( html )
+		htmlUrn = datastore.store( html )
+		functionCache(imageUri) = htmlUrn
+		htmlUrn
 	}
 }
