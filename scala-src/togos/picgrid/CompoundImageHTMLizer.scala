@@ -6,6 +6,7 @@ import togos.picgrid.image.CompoundImage
 import togos.picgrid.BlobConversions.stringAsByteBlob
 import togos.picgrid.BlobConversions.stringAsByteChunk
 import togos.picgrid.BlobConversions.byteChunkAsString
+import togos.picgrid.util.URIUtil.uriEncodePathSegment
 
 class CompoundImageHTMLizer(
 	val functionCache:FunctionCache,
@@ -16,7 +17,7 @@ class CompoundImageHTMLizer(
 ) {
 	def url( urn:String, name:String ):String = {
 		referencedUriCallback(urn)
-		"../" + urn + "/" + name
+		"../" + uriEncodePathSegment(urn) + "/" + uriEncodePathSegment(name)
 	}
 	
 	def header( ci:CompoundImage ) = {

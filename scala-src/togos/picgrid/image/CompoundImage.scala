@@ -2,20 +2,21 @@ package togos.picgrid.image
 
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import scala.collection.mutable.LinkedList
-import java.util.ArrayList
+
 import scala.collection.mutable.ListBuffer
-import togos.picgrid.DigestUtil
-import togos.picgrid.BlobConversions._
-import togos.blob.ByteBlob
+
 import togos.blob.util.ByteBlobInputStream
+import togos.blob.ByteBlob
+import togos.picgrid.BlobConversions.stringAsByteBlob
+import togos.picgrid.util.StringEscape
+import togos.picgrid.DigestUtil
 
 class CompoundImageComponent(
 	val x:Integer, val y:Integer, val width:Integer, val height:Integer,
 	val uri:String, val name:String
 ) {
 	override def toString():String = {
-		x+","+y+","+width+","+height+" "+uri+" name='"+name+"'"
+		x+","+y+","+width+","+height+" "+uri+" name='"+StringEscape(name)+"'"
 	}
 }
 
@@ -55,7 +56,7 @@ object CompoundImage
 	val CI_LINE        = """^COMPOUND-IMAGE (\d+),(\d+)$""".r
 	val PROMOTE1_LINE  = """^PROMOTE1 (\S+)$""".r
 	val PROMOTE2_LINE  = """^PROMOTE2 (\S+)$""".r
-	val COMPONENT_LINE = """^COMPONENT (\d+),(\d+),(\d+),(\d+) (\S+)(?:\s+name='([^']*)')?$""".r
+	val COMPONENT_LINE = """^COMPONENT (\d+),(\d+),(\d+),(\d+) (\S+)(?:\s+name='((?:[^'\\]|\\.)*)')?$""".r
 	val COUNT_LINE     = """^TOTAL-IMAGE-COUNT (\d+)$""".r
 	val SOURCE_LINE    = """^GENERATED-FROM (\S+)$""".r
 	
@@ -80,7 +81,7 @@ object CompoundImage
 					promotedImage1Uri = uri
 				case PROMOTE2_LINE(uri) =>
 					promotedImage2Uri = uri
-				case COMPONENT_LINE(x,y,w,h,uri,name) =>
+				case COMPONENT_LINE(x,y,w,h,uri,StringEscape(name)) =>
 					components += new CompoundImageComponent(x.toInt,y.toInt,w.toInt,h.toInt,uri,name)
 			}
 			line = br.readLine()
