@@ -60,8 +60,22 @@ object WebServerCommand
 		}
 		
 		val resourceCallable = new BlobFunctionCallable(new WebPathToURNSourceAdapter(new FSSHA1Datastore( null, datastorePaths.toList )))
+		val indexCallable = new Callable() {
+			def call( req:Request ):Response = {
+				if( req.getResourceName() != "/" ) return BaseResponse.RESPONSE_UNHANDLED
+				
+				new BaseResponse( ResponseCodes.NORMAL,
+					"To request a resource, use a URL of the format:\n" +
+					"   raw/<urn>/<filename>\n" +
+					"\n" +
+					"For example:\n" +
+					"   raw/urn:bitprint:PEFT4NFUHPH2EH5O7ARWA3KOO37WXKFK.MJZBF6ETFXRZ6JE4M5QONFZZEAKUWUYDS3TPBMI/151612-GEDC8683.JPG\n"
+				);
+			}
+		}
 		
 		val ws = new WebServer()
+		ws.addRequestHandler( indexCallable )
 		ws.addRequestHandler( resourceCallable )
 		ws.run()
 	}
