@@ -20,7 +20,7 @@ class CompoundImageHTMLizer(
 		"../" + uriEncodePathSegment(urn) + "/" + uriEncodePathSegment(name)
 	}
 	
-	def header( ci:CompoundImage ) = {
+	def header( ciUri:String, ci:CompoundImage ) = {
 		val titleBlock = if( ci.generatedFromUri != null ) {
 			"<title>Image grid for " + ci.generatedFromUri + "</title>"
 		} else {
@@ -28,7 +28,10 @@ class CompoundImageHTMLizer(
 		}
 		
 		"<html>\n" +
-		"<head>" + (if(titleBlock != null) titleBlock else "") + "\n" +
+		"<head>\n" +
+		(if(titleBlock != null) titleBlock + "\n" else "") +
+		"<meta name=\"generated-from-compound-image\" content=\""+ciUri+"\"/>\n" +
+		(if(ci.generatedFromUri != null) "<meta name=\"generated-from-directory\" content=\""+ci.generatedFromUri+"\"/>\n" else "") +
 		"<style>/* <![CDATA[ */\n" +
 		"    body {\n" +
 		"        background-color: black;\n" +
@@ -39,9 +42,6 @@ class CompoundImageHTMLizer(
 	}
 	
 	def footer( ci:CompoundImage ) = {
-		if( ci.generatedFromUri != null ) {
-			"<p>Generated from "+ci.generatedFromUri+"</p>"
-		} else { "" } +		
 		"</body></html>"
 	}
 	
@@ -85,7 +85,7 @@ class CompoundImageHTMLizer(
 		
 		val ci = CompoundImage.unserialize( datastore(imageUri) )
 		
-		val html = header(ci) + imageDiv( rasterizedUrl, ci ) + footer( ci )
+		val html = header(imageUri,ci) + imageDiv( rasterizedUrl, ci ) + footer( ci )
 		
 		htmlUrn = datastore.store( html )
 		functionCache(imageUri) = htmlUrn
