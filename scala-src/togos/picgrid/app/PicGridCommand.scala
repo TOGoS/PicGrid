@@ -53,7 +53,7 @@ object WebServerCommand
 					}
 				}
 			} else {
-				System.err.println("Unrecognised arument: "+args(i) )
+				System.err.println("Unrecognized argument: "+args(i) )
 				System.exit(1)
 			}
 			i += 1
