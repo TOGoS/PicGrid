@@ -17,14 +17,14 @@ import java.io.FileNotFoundException
 
 object ImageInfoExtractor
 {
-	val GIF_MAGIC:Integer = 0x47494638
-	val PNG_MAGIC:Integer = 0x89504E47
+	val GIF_MAGIC:Int = 0x47494638
+	val PNG_MAGIC:Int = 0x89504E47
 	val JPG_MAGIC:Short = 0xFFD8.toShort
 	val BMP_MAGIC:Short = 0x424D
-	val COMP_MAGIC:Integer = 0x434F4D50 // "COMP" (as in "COMPOSITE-IMAGE")
+	val COMP_MAGIC:Int = 0x434F4D50 // "COMP" (as in "COMPOSITE-IMAGE")
 	
 	def extractImageType( magic:Array[Byte] ):ImageFormat = {
-		val magicI:Integer =
+		val magicI:Int =
 			((magic(0) & 0xFF) << 24) |
 			((magic(1) & 0xFF) << 16) |
 			((magic(2) & 0xFF) <<  8) |
@@ -51,7 +51,7 @@ object ImageInfoExtractor
 		return null
 	}
 	
-	def extractImageDimensions( inputStream:InputStream, formatName:String ):(Integer,Integer) = {
+	def extractImageDimensions( inputStream:InputStream, formatName:String ):(Int,Int) = {
 		val readerIter = ImageIO.getImageReadersByFormatName(formatName)
 		if( readerIter.hasNext() ) {
 			val reader = readerIter.next().asInstanceOf[ImageReader]
@@ -80,15 +80,15 @@ import togos.picgrid.image.ImageInfoExtractor._
 
 class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:BlobSource )
 {
-	var dimensionCache = new Function[String,(Integer,Integer)] {
-		def apply( uri:String ):(Integer,Integer) = {
+	var dimensionCache = new Function[String,(Int,Int)] {
+		def apply( uri:String ):(Int,Int) = {
 			val str = imageDimensionCache( uri ):String
 			if( str == null ) return null
 			val parts = str.split(',')
 			(parts(0).toInt, parts(1).toInt)
 		}
 		
-		def update( uri:String, dims:(Integer,Integer) ) {
+		def update( uri:String, dims:(Int,Int) ) {
 			imageDimensionCache( uri ) = dims._1 + "," + dims._2
 		}
 	}
@@ -101,7 +101,7 @@ class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:B
 		extractImageType( imageBlob )
 	}
 	
-	def getImageDimensions( imageUri:String ):(Integer,Integer) = {
+	def getImageDimensions( imageUri:String ):(Int,Int) = {
 		var dims = dimensionCache(imageUri)
 		if( dims == null ) {
 			val imageBlob = datastore(imageUri)

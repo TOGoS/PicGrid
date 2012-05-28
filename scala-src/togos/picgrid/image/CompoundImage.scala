@@ -12,7 +12,7 @@ import togos.picgrid.util.StringEscape
 import togos.picgrid.DigestUtil
 
 class CompoundImageComponent(
-	val x:Integer, val y:Integer, val width:Integer, val height:Integer,
+	val x:Int, val y:Int, val width:Int, val height:Int,
 	val uri:String, val name:String
 ) {
 	override def toString():String = {
@@ -21,10 +21,10 @@ class CompoundImageComponent(
 }
 
 class CompoundImage(
-	val width:Integer, val height:Integer,
+	val width:Int, val height:Int,
 	val components:Seq[CompoundImageComponent],
 	val promotedImage1Uri:String, val promotedImage2Uri:String,
-	val totalImageCount:Integer, val generatedFromUri:String
+	val totalImageCount:Int, val generatedFromUri:String
 ) {
 	def aspectRatio = width.toFloat / height
 	

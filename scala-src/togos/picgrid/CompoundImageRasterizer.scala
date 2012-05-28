@@ -45,7 +45,7 @@ class CompoundImageRasterizer(
 		throw new Exception("Don't know how to rasterize image type: "+imageType)
 	}
 	
-	def aspectRatio( w:Integer, h:Integer ) = w.toFloat / h
+	def aspectRatio( w:Int, h:Int ) = w.toFloat / h
 	
 	def rasterize( ci:CompoundImage ):String = {
 		if( ci.components.length == 1 ) {

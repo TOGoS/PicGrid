@@ -3,7 +3,6 @@ package togos.picgrid
 import java.io.File
 import java.io.FileWriter
 import java.security.MessageDigest
-import scala.annotation.serializable
 import scala.collection.mutable.ListBuffer
 import org.bitpedia.util.Base32
 import togos.picgrid.BlobConversions._
@@ -24,8 +23,8 @@ import java.io.Writer
 @serializable
 class ImageInfo(
 	val uri:String, val sourceUri:String,
-	val width:Integer, val height:Integer,
-	val totalImageCount:Integer
+	val width:Int, val height:Int,
+	val totalImageCount:Int
 )
 
 @serializable
@@ -41,7 +40,7 @@ class RowlyGridificationMethod extends GridificationMethod
 {
 	def configString = "rowly-default"
 	
-	def gridifyRows( images:List[ImageEntry], imagesPerRow:Integer ):List[CompoundImageComponent] = {
+	def gridifyRows( images:List[ImageEntry], imagesPerRow:Int ):List[CompoundImageComponent] = {
 		var rows = ListBuffer[List[ImageEntry]]()
 		var row = ListBuffer[ImageEntry]()
 		for( i <- images ) {
@@ -80,7 +79,7 @@ class RowlyGridificationMethod extends GridificationMethod
 		components.toList
 	}
 	
-	def gridifyColumns( images:List[ImageEntry], imagesPerColumn:Integer ):List[CompoundImageComponent] = {
+	def gridifyColumns( images:List[ImageEntry], imagesPerColumn:Int ):List[CompoundImageComponent] = {
 		var columns = ListBuffer[List[ImageEntry]]()
 		var column = ListBuffer[ImageEntry]()
 		for( i <- images ) {
@@ -203,13 +202,13 @@ class BitmapGridificationMethod extends GridificationMethod
 {
 	def configString = "bitmap-default"
 	
-	class Bitmap( val width:Integer, val height:Integer ) {
+	class Bitmap( val width:Int, val height:Int ) {
 		val data = new Array[Boolean]( width*height )
 		
-		def apply( x:Integer, y:Integer ):Boolean = data(x + y*width)
-		def update( x:Integer, y:Integer, v:Boolean ) { data(x + y*width) = v }
+		def apply( x:Int, y:Int ):Boolean = data(x + y*width)
+		def update( x:Int, y:Int, v:Boolean ) { data(x + y*width) = v }
 		
-		def spotIsOpen( x:Integer, y:Integer, w:Integer, h:Integer ):Boolean = {
+		def spotIsOpen( x:Int, y:Int, w:Int, h:Int ):Boolean = {
 			if( x+w >= width || y+h >= height ) return false
 			
 			var cy = 0
@@ -224,7 +223,7 @@ class BitmapGridificationMethod extends GridificationMethod
 			return true
 		}
 		
-		def markSpotUsed( x:Integer, y:Integer, w:Integer, h:Integer ) {
+		def markSpotUsed( x:Int, y:Int, w:Int, h:Int ) {
 			var cy = 0
 			while( cy < h ) {
 				var cx = 0
@@ -236,7 +235,7 @@ class BitmapGridificationMethod extends GridificationMethod
 			}
 		}
 		
-		def findOpenSpot( w:Integer, h:Integer ):(Integer,Integer) = {
+		def findOpenSpot( w:Int, h:Int ):(Int,Int) = {
 			var y = 0
 			while( y < height ) {
 				var x = 0
@@ -265,7 +264,7 @@ class BitmapGridificationMethod extends GridificationMethod
 		}
 	}
 	
-	def quantize( i:ImageInfo, scale:Double ):(Integer,Integer) = {
+	def quantize( i:ImageInfo, scale:Double ):(Int,Int) = {
 		if( i.width >= i.height ) {
 			var w = Math.round(i.width.toFloat / i.height * scale * 3).toInt
 			if( w < 1 ) w = 1
@@ -291,7 +290,7 @@ class BitmapGridificationMethod extends GridificationMethod
 	val cellHeight = 104
 	val cellSpacing = 4
 
-	def fitAll( images:List[ImageEntry], bitmapWidth:Integer, bitmapHeight:Integer ):List[CompoundImageComponent] = {
+	def fitAll( images:List[ImageEntry], bitmapWidth:Int, bitmapHeight:Int ):List[CompoundImageComponent] = {
 		val bitmap = new Bitmap( bitmapWidth, bitmapHeight )
 		val components = new ListBuffer[CompoundImageComponent]
 		for( e <- images ) {
@@ -300,7 +299,7 @@ class BitmapGridificationMethod extends GridificationMethod
 			val loc = bitmap.findOpenSpot( cellsWide, cellsTall )
 			if( loc == null ) return null
 			bitmap.markSpotUsed( loc._1, loc._2, cellsWide, cellsTall )
-			val cx = (cellWidth + cellSpacing) * loc._1
+			val cx:Int = (cellWidth + cellSpacing) * loc._1
 			val cw = cellWidth * cellsWide + cellSpacing * (cellsWide - 1)
 			val cy = (cellHeight + cellSpacing) * loc._2
 			val ch = cellHeight * cellsTall + cellSpacing * (cellsTall - 1)
@@ -338,8 +337,8 @@ class BitmapGridificationMethod extends GridificationMethod
 		// double scale image takes 2 lines, etc
 		// bitmap is arranged rows-first
 		
-		var bitmapWidth:Integer = Math.round(outerWidth)*3 toInt
-		var bitmapHeight:Integer = Math.round(outerHeight) toInt
+		var bitmapWidth:Int = Math.round(outerWidth)*3 toInt
+		var bitmapHeight:Int = Math.round(outerHeight) toInt
 		
 		var components = fitAll( images, bitmapWidth, bitmapHeight )
 		while( components == null ) {
