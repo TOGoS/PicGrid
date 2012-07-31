@@ -1,6 +1,7 @@
 package togos.picgrid.image
 
 import java.io.File
+import java.lang.Integer
 
 import scala.collection.mutable.HashMap
 
@@ -18,7 +19,7 @@ import togos.picgrid.MemoryFunctionCache
  */
 class ImageMagickCropResizer( val datastore:FSDatastore, val imConvert:CommandLine )
 {
-	def resize( infile:File, newWidth:Integer, newHeight:Integer, outFile:File ):Process = {
+	def resize( infile:File, newWidth:Int, newHeight:Int, outFile:File ):Process = {
 		makeParentDirs( outFile )
 		val args = Array[String](
 			infile.getPath(),
@@ -32,7 +33,7 @@ class ImageMagickCropResizer( val datastore:FSDatastore, val imConvert:CommandLi
 		imConvert.start(args);
 	}
 	
-	def resize( origUri:String, boxWidth:Integer, boxHeight:Integer ):String = {
+	def resize( origUri:String, boxWidth:Int, boxHeight:Int ):String = {
 		val origBlob = datastore( origUri )
 		if( origBlob == null ) throw new Exception("Couldn't find "+origUri)
 		if( !origBlob.isInstanceOf[FileBlob] ) throw new Exception("Can only work with file blobs; got a "+origBlob.getClass())

@@ -1,5 +1,7 @@
 package togos.picgrid.image
-import java.awt.image.BufferedImage
+
+import java.awt.image.BufferedImage
+import java.lang.Integer
 import javax.imageio.ImageIO
 import togos.blob.util.ByteBlobInputStream
 import togos.picgrid.BetterByteArrayOutputStream
@@ -17,7 +19,7 @@ class CrapResizer
 		ImageIO.read(is)
 	}
 	
-	def fit( oWidth:Integer, oHeight:Integer, boxWidth:Integer, boxHeight:Integer ) = {
+	def fit( oWidth:Int, oHeight:Int, boxWidth:Int, boxHeight:Int ) = {
 		var newWidth = oWidth
 		var newHeight = oHeight
 		if( newWidth > boxWidth ) {
@@ -32,7 +34,7 @@ class CrapResizer
 		(newWidth, newHeight)
 	}
 	
-	def resize( orig:ImageHandle, boxWidth:Integer, boxHeight:Integer ):ImageHandle = {
+	def resize( orig:ImageHandle, boxWidth:Int, boxHeight:Int ):ImageHandle = {
 		val oImg = load(orig)
 		if( oImg == null ) throw new Exception("Couldn't find "+orig.uri)
 		val (w,h) = fit( oImg.getWidth(null), oImg.getHeight(null), boxWidth, boxHeight )
