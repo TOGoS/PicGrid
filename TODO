@@ -1,0 +1,23 @@
+== New gridification method ==
+
+For a given set of images with weights (these weights can
+be assigned arbitrarily), create a single row.
+Find the average area / weight.
+Create the row again, this time adjusting images that are
+too large by attempting to fit them into a cell with
+neighboring images that are also too large.
+
+Next, take the width/height of the single row
+and calculate how many rows the image set should be split into
+to match the target ratio.  Break the single row up into
+that many rows, that many -1, -2, +1, and +2, and
+hold onto those configurations and their fitness values.
+
+Repeat the 2 steps but making columns instead of rows.
+
+== Flexibility ==
+
+Break program into smaller parts that can be run separately.
+
+Include a utility for scanning emitted HTML files for URNs
+and writing them all to STDOUT.

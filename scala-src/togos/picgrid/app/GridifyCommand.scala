@@ -33,7 +33,21 @@ object GridifyCommand
 		}
 	}
 	
-	def main( args:Array[String] ) {
+	def usage( cmdName:String ) =
+		"Usage: "+cmdName+" [options] <target>\n"+
+		"Target is the URN of a file or directory to render.\n" +
+		"Options:\n" +
+		"  -v ; be verbose\n" +
+		"  -convert-path <exe> ; path to convert.exe\n" +
+		"  -function-cache-dir <dir> ; dir to store function results in\n" +
+		"  -datastore <dir> ; dir to store output data in\n" +
+		"  -datasource <dir> ; dir in which to find input data\n" +
+		"  -ms-datasource <dir> ; dir containing dirs in which to find input data\n" +
+		"  -resource-log <file> ; where to write generated data URNs; may be '-'\n" +
+		"    for standard output, or of the form '| command args ...' to pipe to another\n" +
+		"    program."
+	
+	def main( cmdName:String, args:Array[String] ) {
 		var datastoreDir:String = null
 		var datasources:ListBuffer[String] = new ListBuffer[String]()
 		var functionCacheDir:String = null
@@ -68,8 +82,12 @@ object GridifyCommand
 					refStoragePath = args(i)
 				case arg if !arg.startsWith("-") =>
 					target = arg
+				case "-?" | "-h" | "-help" | "--help" =>
+					System.out.println(usage(cmdName))
+					System.exit(0)
 				case arg =>
 					System.err.println("Error: Unrecognised argument: "+arg)
+					System.err.println(usage(cmdName))
 					System.exit(1)
 			}
 			i += 1
@@ -166,6 +184,7 @@ object GridifyCommand
 			System.out.println( "# Page (again, in case it scrolled away)" )
 			System.out.println( pageUri );
 		}
-		
 	}
+	
+	def main( args:Array[String] ) { main("gridify", args) }
 }

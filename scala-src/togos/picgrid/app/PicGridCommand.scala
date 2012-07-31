@@ -84,9 +84,17 @@ object WebServerCommand
 object PicGridCommand {
 	type Command = { def main( args:Array[String] ):Unit }
 	
+	val USAGE =
+		"Usage: picgrid <subcommand> [options] ...\n" +
+		"Sub-commands:\n" +
+		"  compose\n" +
+		"  webserve\n" +
+		"Run '<subcommand> -?' for help with specific commands."
+	
 	def main( args:Array[String] ) {
 		if( args.length == 0 ) {
 			System.err.println("No sub-command given")
+			System.err.println(USAGE)
 			System.exit(1)
 		}
 		
@@ -94,11 +102,14 @@ object PicGridCommand {
 		val subCmdArgs = args.slice(1,args.length)
 		subCmdName match {
 		case "compose" =>
-			GridifyCommand.main(subCmdArgs)
+			GridifyCommand.main("picgrid compose", subCmdArgs)
 		case "webserve" =>
 			WebServerCommand.main(subCmdArgs)
+		case "-?" | "-h" | "-help" | "--help" =>
+			System.out.println(USAGE)
 		case _ =>
 			System.err.println("Unrecognised command: "+subCmdName)
+			System.err.println(USAGE)
 			System.exit(1)
 			null
 		} 
