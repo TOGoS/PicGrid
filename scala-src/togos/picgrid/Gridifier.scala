@@ -290,7 +290,7 @@ class BitmapGridificationMethod extends GridificationMethod
 			val loc = bitmap.findOpenSpot( cellsWide, cellsTall )
 			if( loc == null ) return null
 			bitmap.markSpotUsed( loc._1, loc._2, cellsWide, cellsTall )
-			val cx = (cellWidth + cellSpacing) * loc._1
+			val cx:Int = (cellWidth + cellSpacing) * loc._1
 			val cw = cellWidth * cellsWide + cellSpacing * (cellsWide - 1)
 			val cy = (cellHeight + cellSpacing) * loc._2
 			val ch = cellHeight * cellsTall + cellSpacing * (cellsTall - 1)
