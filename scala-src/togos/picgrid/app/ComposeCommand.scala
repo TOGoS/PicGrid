@@ -20,7 +20,7 @@ import togos.picgrid.Gridifier
 import togos.picgrid.CompoundImageRasterizer
 import togos.picgrid.CompoundImageHTMLizer
 
-object GridifyCommand
+object ComposeCommand
 {
 	def getCache( dir:String, name:String ):FunctionCache = {
 		if( dir != null ) {
@@ -34,8 +34,8 @@ object GridifyCommand
 	}
 	
 	def usage( cmdName:String ) =
-		"Usage: "+cmdName+" [options] <target>\n"+
-		"Target is the URN of a file or directory to render.\n" +
+		"Usage: "+cmdName+" [options] <source>\n"+
+		"Target is the URN of a directory or compound image to render.\n" +
 		"Options:\n" +
 		"  -v ; be verbose\n" +
 		"  -convert-path <exe> ; path to convert.exe\n" +
@@ -45,7 +45,12 @@ object GridifyCommand
 		"  -ms-datasource <dir> ; dir containing dirs in which to find input data\n" +
 		"  -resource-log <file> ; where to write generated data URNs; may be '-'\n" +
 		"    for standard output, or of the form '| command args ...' to pipe to another\n" +
-		"    program."
+		"    program.\n" +
+		"  -from-directory      ; force to treat source as a directory.\n" +
+		"  -from-compound-image ; force to treat source as a compound image.\n" +
+		"  -to-compound-image   ; final output is a compound image.\n" +
+		"  -to-raster-image     ; final output is a raster image.\n" +
+		"  -to-html             ; final output is an HTML page.\n"
 	
 	def main( cmdName:String, args:Array[String] ) {
 		var datastoreDir:String = null
@@ -53,8 +58,10 @@ object GridifyCommand
 		var functionCacheDir:String = null
 		var verbose = false
 		var i = 0
-		var target:String = null
+		var sourceUri:String = null
 		var refStoragePath:String = null
+		var sourceType:String = null
+		var targetType:String = "html"
 		while( i < args.length ) {
 			args(i) match {
 				case "-v" =>
@@ -80,8 +87,18 @@ object GridifyCommand
 				case "-resource-log" =>
 					i += 1
 					refStoragePath = args(i)
+				case "-from-directory" =>
+					sourceType = "directory"
+				case "-from-compound-image" =>
+					sourceType = "compound-image"
+				case "-to-compound-image" =>
+					targetType = "compound-image"
+				case "-to-raster-image" =>
+					targetType = "raster-image"
+				case "-to-html" =>
+					targetType = "html"
 				case arg if !arg.startsWith("-") =>
-					target = arg
+					sourceUri = arg
 				case "-?" | "-h" | "-help" | "--help" =>
 					System.out.println(usage(cmdName))
 					System.exit(0)
@@ -97,9 +114,17 @@ object GridifyCommand
 			throw new RuntimeException("No -datastore directory specified")
 		}
 		val datastore = new FSSHA1Datastore(new File(datastoreDir), datasources.toList)
-		if( target == null ) {
-			System.err.println("Error: You must specify a target")
+		if( sourceUri == null ) {
+			System.err.println("Error: You must specify a source object")
 			System.exit(1)
+		}
+		
+		if( sourceType == null ) {
+			if( sourceUri.startsWith("rdf-subject:") || sourceUri.startsWith("x-rdf-subject:") || sourceUri.startsWith("x-parse-rdf:") ) {
+				sourceType = "directory"
+			} else {
+				sourceType = "compound-image"
+			}
 		}
 		
 		var resource:Process = null
@@ -154,34 +179,58 @@ object GridifyCommand
 		
 		val htmlizer = new CompoundImageHTMLizer( getCache(functionCacheDir, "htmlization"), datastore, imageInfoExtractor, rasterizer, refLogger )
 		
-		val centry = gridifier.gridifyDir( target, null )
-		if( centry == null ) {
-			System.err.println("No images found!")
+		val compoundImageUri = sourceType match {
+		case "directory" =>
+			val centry = gridifier.gridifyDir( sourceUri, null )
+			if( centry == null ) {
+				System.err.println("No images found!")
+				return
+			}
+			val cinfo = centry.info
+			cinfo.uri
+		case "compound-image" =>
+			sourceUri
+		}
+
+		if( targetType == "compound-image" ) {
+			System.out.println( compoundImageUri )
 			return
 		}
 		
-		val cinfo = centry.info
-		
 		if( verbose ) {
 			System.out.println( "# Compound image URI" )
-			System.out.println( cinfo.uri )
-			
-			val rasterizationUri = rasterizer( cinfo.uri )
-			System.out.println( "# Rasterization" )
+			System.out.println( compoundImageUri )
+		}
+		
+		//// Rasterize
+		
+		val rasterizationUri = rasterizer( compoundImageUri )
+
+		if( targetType == "raster-image" ) {
+			System.out.println( rasterizationUri )
+			return
+		}
+
+		if( verbose ) {
+			System.out.println( "# Raster image URI" )
 			System.out.println( rasterizationUri )
 		}
 		
-		val pageUri = htmlizer.pagify( cinfo.uri )
+		//// Pagify
+
+		val pageUri = htmlizer.pagify( compoundImageUri )
 		refLogger( pageUri )
 		
-		if( verbose ) System.out.println( "# Page" )
+		if( verbose ) {
+			System.out.println( "# Page URI" )
+		}
 		System.out.println( pageUri );
 		
 		if( refWriter != null ) refWriter.close()
 		if( resource != null ) resource.waitFor()
 		
 		if( verbose ) {
-			System.out.println( "# Page (again, in case it scrolled away)" )
+			System.out.println( "# Page URI (again, in case it scrolled away)" )
 			System.out.println( pageUri );
 		}
 	}

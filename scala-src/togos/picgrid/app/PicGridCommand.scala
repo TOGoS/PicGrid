@@ -40,10 +40,17 @@ class BlobFunctionCallable( val blobFunction:(String=>ByteBlob) ) extends Callab
 
 object WebServerCommand
 {
-	def main( args:Array[String] ) {
+	def usage( cmdName:String ) =
+		"Usage: "+cmdName+" [options]\n"+
+		"Options:\n" +
+		"  -port <port>\n" +
+		"  -repo <repo-root>\n";
+	
+	def main( cmdName:String, args:Array[String] ) {
 		val datastorePaths = new ArrayBuffer[String]
 		
 		var i = 0
+		var port = 80
 		while( i < args.length ) {
 			if( "-repo".equals(args(i)) ) {
 				i += 1
@@ -52,8 +59,15 @@ object WebServerCommand
 						datastorePaths += f.getPath()
 					}
 				}
+			} else if( "-port".equals(args(i)) ) {
+				i += 1
+				port = Integer.parseInt(args(i))
+			} else if( "-?".equals(args(i)) ) {
+				System.out.println(usage(cmdName))
+				System.exit(0)
 			} else {
 				System.err.println("Unrecognized argument: "+args(i) )
+				System.err.println(usage(cmdName))
 				System.exit(1)
 			}
 			i += 1
@@ -75,10 +89,13 @@ object WebServerCommand
 		}
 		
 		val ws = new WebServer()
+		ws.port = port
 		ws.addRequestHandler( indexCallable )
 		ws.addRequestHandler( resourceCallable )
 		ws.run()
 	}
+	
+	def main( args:Array[String] ) { main("webserve", args) }
 }
 
 object PicGridCommand {
@@ -102,7 +119,7 @@ object PicGridCommand {
 		val subCmdArgs = args.slice(1,args.length)
 		subCmdName match {
 		case "compose" =>
-			GridifyCommand.main("picgrid compose", subCmdArgs)
+			ComposeCommand.main("picgrid compose", subCmdArgs)
 		case "webserve" =>
 			WebServerCommand.main(subCmdArgs)
 		case "-?" | "-h" | "-help" | "--help" =>
