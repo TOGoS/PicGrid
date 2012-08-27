@@ -1,26 +1,18 @@
 package togos.picgrid
 
-import java.io.File
-import java.io.FileWriter
 import java.security.MessageDigest
 import scala.collection.mutable.ListBuffer
 import org.bitpedia.util.Base32
 import togos.picgrid.BlobConversions._
-import togos.picgrid.file.FSSHA1Datastore
-import togos.picgrid.file.FileUtil
-import togos.picgrid.file.SLFFunctionCache
 import togos.picgrid.image.CompoundImage
 import togos.picgrid.image.CompoundImageComponent
 import togos.picgrid.image.ImageInfoExtractor
-import togos.picgrid.image.ImageMagickCommands
-import togos.picgrid.image.ImageMagickCropResizer
-import togos.picgrid.file.SLF2FunctionCache
 import togos.blob.ByteChunk
 import togos.ccouch2.store.Store
-import java.io.OutputStreamWriter
-import java.io.Writer
+import java.lang.Integer
 
 @serializable
+@SerialVersionUID(1)
 class ImageInfo(
 	val uri:String, val sourceUri:String,
 	val width:Int, val height:Int,
@@ -28,6 +20,7 @@ class ImageInfo(
 )
 
 @serializable
+@SerialVersionUID(1)
 class ImageEntry( val name:String, val info:ImageInfo )
 
 trait GridificationMethod
@@ -136,7 +129,7 @@ class RowlyGridificationMethod extends GridificationMethod
 		val ar = aspectRatio( components )
 		var dist = 1.2 / ar;
 		if( dist < 1 ) dist = 1 / dist
-		- Math.pow( dist, aspectRatioPower ) * aspectRatioWeight
+		- math.pow( dist, aspectRatioPower ) * aspectRatioWeight
 		
 		/*
 		if( ar > 2.0 ) return (1.6 - ar)/1.0
@@ -155,7 +148,7 @@ class RowlyGridificationMethod extends GridificationMethod
 			if( area < smallestArea ) smallestArea = area
 			if( area > largestArea ) largestArea = area
 		}
-		- Math.pow( largestArea.toDouble / smallestArea, componentAreaRatioPower ) * componentAreaRatioWeight
+		- math.pow( largestArea.toDouble / smallestArea, componentAreaRatioPower ) * componentAreaRatioWeight
 	}
 	
 	def fitness( components:Seq[CompoundImageComponent] ):Double = {
@@ -165,7 +158,7 @@ class RowlyGridificationMethod extends GridificationMethod
 	def gridify( images:Seq[ImageEntry] ):List[CompoundImageComponent] = {
 		var bestFitness = Double.NegativeInfinity
 		var bestResult:List[CompoundImageComponent] = null
-		var numRows = Math.sqrt(images.length).toInt - 3
+		var numRows = math.sqrt(images.length).toInt - 3
 		if( numRows < 1 ) numRows = 1
 		var i = 0
 		while( i < 6 ) {
@@ -266,22 +259,22 @@ class BitmapGridificationMethod extends GridificationMethod
 	
 	def quantize( i:ImageInfo, scale:Double ):(Int,Int) = {
 		if( i.width >= i.height ) {
-			var w = Math.round(i.width.toFloat / i.height * scale * 3).toInt
+			var w = math.round(i.width.toFloat / i.height * scale * 3).toInt
 			if( w < 1 ) w = 1
-			var h = Math.round(scale).toInt
+			var h = math.round(scale).toInt
 			if( h < 1 ) h = 1
 			return (w,h)
 		} else {
-			var h = Math.round(i.height.toFloat / i.width * scale).toInt
+			var h = math.round(i.height.toFloat / i.width * scale).toInt
 			if( h < 1 ) h = 1
-			var w = Math.round(scale * 3).toInt
+			var w = math.round(scale * 3).toInt
 			if( w < 1 ) w = 1
 			return (w,h)
 		}
 	}
 	
 	def computeScale( i:ImageInfo ):Double = {
-		var scale = Math.log( i.totalImageCount.toDouble )/3
+		var scale = math.log( i.totalImageCount.toDouble )/3
 		if( scale < 1 ) scale = 1
 		scale
 	}
@@ -326,7 +319,7 @@ class BitmapGridificationMethod extends GridificationMethod
 		System.err.println("Average aspect ratio = "+averageAspectRatio)
 		System.err.println("Total area = "+totalArea)
 		
-		val outerHeight = Math.sqrt( totalArea / averageAspectRatio )
+		val outerHeight = math.sqrt( totalArea / averageAspectRatio )
 		val outerWidth = outerHeight * averageAspectRatio
 		
 		// Bitmap format:
@@ -337,8 +330,8 @@ class BitmapGridificationMethod extends GridificationMethod
 		// double scale image takes 2 lines, etc
 		// bitmap is arranged rows-first
 		
-		var bitmapWidth:Int = Math.round(outerWidth)*3 toInt
-		var bitmapHeight:Int = Math.round(outerHeight) toInt
+		var bitmapWidth:Int = math.round(outerWidth)*3 toInt
+		var bitmapHeight:Int = math.round(outerHeight) toInt
 		
 		var components = fitAll( images, bitmapWidth, bitmapHeight )
 		while( components == null ) {

@@ -40,10 +40,17 @@ class BlobFunctionCallable( val blobFunction:(String=>ByteBlob) ) extends Callab
 
 object WebServerCommand
 {
-	def main( args:Array[String] ) {
+	def usage( cmdName:String ) =
+		"Usage: "+cmdName+" [options]\n"+
+		"Options:\n" +
+		"  -port <port>\n" +
+		"  -repo <repo-root>\n";
+	
+	def main( cmdName:String, args:Array[String] ) {
 		val datastorePaths = new ArrayBuffer[String]
 		
 		var i = 0
+		var port = 80
 		while( i < args.length ) {
 			if( "-repo".equals(args(i)) ) {
 				i += 1
@@ -52,8 +59,15 @@ object WebServerCommand
 						datastorePaths += f.getPath()
 					}
 				}
+			} else if( "-port".equals(args(i)) ) {
+				i += 1
+				port = Integer.parseInt(args(i))
+			} else if( "-?".equals(args(i)) ) {
+				System.out.println(usage(cmdName))
+				System.exit(0)
 			} else {
 				System.err.println("Unrecognized argument: "+args(i) )
+				System.err.println(usage(cmdName))
 				System.exit(1)
 			}
 			i += 1
@@ -75,18 +89,29 @@ object WebServerCommand
 		}
 		
 		val ws = new WebServer()
+		ws.port = port
 		ws.addRequestHandler( indexCallable )
 		ws.addRequestHandler( resourceCallable )
 		ws.run()
 	}
+	
+	def main( args:Array[String] ) { main("webserve", args) }
 }
 
 object PicGridCommand {
 	type Command = { def main( args:Array[String] ):Unit }
 	
+	val USAGE =
+		"Usage: picgrid <subcommand> [options] ...\n" +
+		"Sub-commands:\n" +
+		"  compose\n" +
+		"  webserve\n" +
+		"Run '<subcommand> -?' for help with specific commands."
+	
 	def main( args:Array[String] ) {
 		if( args.length == 0 ) {
 			System.err.println("No sub-command given")
+			System.err.println(USAGE)
 			System.exit(1)
 		}
 		
@@ -94,11 +119,14 @@ object PicGridCommand {
 		val subCmdArgs = args.slice(1,args.length)
 		subCmdName match {
 		case "compose" =>
-			GridifyCommand.main(subCmdArgs)
+			ComposeCommand.main("picgrid compose", subCmdArgs)
 		case "webserve" =>
 			WebServerCommand.main(subCmdArgs)
+		case "-?" | "-h" | "-help" | "--help" =>
+			System.out.println(USAGE)
 		case _ =>
 			System.err.println("Unrecognised command: "+subCmdName)
+			System.err.println(USAGE)
 			System.exit(1)
 			null
 		} 

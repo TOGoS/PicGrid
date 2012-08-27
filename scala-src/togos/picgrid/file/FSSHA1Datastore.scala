@@ -2,6 +2,7 @@ package togos.picgrid.file
 
 import java.io.File
 import java.io.FileOutputStream
+import java.lang.Integer
 import org.bitpedia.util.Base32
 import togos.blob.ByteBlob
 import togos.blob.ByteChunk
@@ -23,12 +24,12 @@ class FSSHA1Datastore(val dir: File, val extraReadDirs: List[String] = List()) e
 	/**
 	 * @return a temporary path inside the repository
 	 */
-	def tempFile(ext: String = ""): File = {
-		new File(dir + "/.temp-" + (Math.random * Integer.MAX_VALUE).toInt + "-" + (Math.random * Integer.MAX_VALUE).toInt + "-" + (Math.random * Integer.MAX_VALUE).toInt + ext)
+	def tempFile( ext:String="" ):File = {
+		new File(dir + "/.temp-" + (math.random*Integer.MAX_VALUE).toInt + "-" + (math.random*Integer.MAX_VALUE).toInt + "-" + (math.random*Integer.MAX_VALUE).toInt + ext)
 	}
-
-	protected def tempFileFor(sha1: String): File = {
-		new File(dir + "/" + sha1.substring(0, 2) + "/." + sha1 + ".temp-" + (Math.random * Integer.MAX_VALUE).toInt)
+	
+	protected def tempFileFor( sha1:String ):File = {
+		new File(dir + "/" + sha1.substring(0,2) + "/." + sha1 + ".temp-" + (math.random*Integer.MAX_VALUE).toInt)
 	}
 
 	def apply(uri: String): ByteBlob = {

@@ -1,5 +1,7 @@
 package togos
 
+import java.lang.Integer
+
 import togos.blob.ByteBlob
 import togos.blob.ByteChunk
 import togos.ccouch2.store.AutoStore
@@ -21,7 +23,7 @@ package object picgrid
 	}
 	
 	type ImageResizer = {
-		def resize( origUri:String, boxWidth:Integer, boxHeight:Integer ):String
+		def resize( origUri:String, boxWidth:Int, boxHeight:Int ):String
 	}
 	
 	type FunctionCache = Store[ByteChunk,ByteChunk]

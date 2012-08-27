@@ -9,7 +9,7 @@ object StringEscape
 	def escape( str:String ):String = {
 		val rez = new StringBuilder()
 		var i = 0
-		while( i<str.length() ) {
+		while( i < str.length() ) {
 			rez.append( str.charAt(i) match {
 				case '\n' => "\\n"
 				case '\r' => "\\r"
@@ -29,7 +29,7 @@ object StringEscape
 		
 		val rez = new StringBuilder()
 		var i = 0
-		while( i<str.length() ) {
+		while( i < str.length() ) {
 			val c = str.charAt(i)
 			rez.append(
 				if( c == '\\' && i+1 < str.length() ) {

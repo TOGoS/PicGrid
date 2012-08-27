@@ -2,6 +2,7 @@ package togos.picgrid.image
 
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.lang.Integer
 
 import scala.collection.mutable.ListBuffer
 

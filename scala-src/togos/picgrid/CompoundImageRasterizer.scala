@@ -2,6 +2,7 @@ package togos.picgrid
 
 import java.io.File
 import java.io.FileNotFoundException
+import java.lang.Integer
 
 import scala.collection.mutable.ArrayBuffer
 

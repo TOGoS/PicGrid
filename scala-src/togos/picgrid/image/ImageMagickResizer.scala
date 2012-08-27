@@ -16,7 +16,7 @@ class ImageMagickResizer( val functionCache:FunctionCache, val datastore:FSDatas
 {
 	val imageInfoExtractor = new ImageInfoExtractor(functionCache, datastore)
 	
-	def resize( infile:File, newWidth:Integer, newHeight:Integer, outFile:File ):Process = {
+	def resize( infile:File, newWidth:Int, newHeight:Int, outFile:File ):Process = {
 		makeParentDirs( outFile )
 		val args = Array[String](
 			infile.getPath(),
@@ -28,7 +28,7 @@ class ImageMagickResizer( val functionCache:FunctionCache, val datastore:FSDatas
 		imConvert.start(args)
 	}
 	
-	def resize( origUri:String, boxWidth:Integer, boxHeight:Integer ):String = {
+	def resize( origUri:String, boxWidth:Int, boxHeight:Int ):String = {
 		val origBlob = datastore( origUri )
 		if( origBlob == null ) throw new Exception("Couldn't find "+origUri)
 		if( !origBlob.isInstanceOf[FileBlob] ) throw new Exception("Can only work with file blobs; got a "+origBlob.getClass())

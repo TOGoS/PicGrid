@@ -1,7 +1,7 @@
 package togos.picgrid.image
 
 import java.io.InputStream
-
+import java.lang.Integer
 import javax.imageio.ImageIO
 import javax.imageio.ImageReader
 import togos.blob.ByteBlob
