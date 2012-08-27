@@ -170,14 +170,6 @@ object ComposeCommand
 		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert )
 		val gridificationMethod = new RowlyGridificationMethod
 		val gridifier = new Gridifier( getCache(functionCacheDir, "gridification"), datastore, imageInfoExtractor, gridificationMethod )
-		val rasterizer:(String=>String) = new CompoundImageRasterizer( getCache(functionCacheDir, "rasterize"), datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
-		val loggingRasterizer = { a:String =>
-			val res = rasterizer(a)
-			refLogger(res)
-			res
-		}
-		
-		val htmlizer = new CompoundImageHTMLizer( getCache(functionCacheDir, "htmlization"), datastore, imageInfoExtractor, rasterizer, refLogger )
 		
 		val compoundImageUri = sourceType match {
 		case "directory" =>
@@ -204,6 +196,13 @@ object ComposeCommand
 		
 		//// Rasterize
 		
+		val rasterizer:(String=>String) = new CompoundImageRasterizer( getCache(functionCacheDir, "rasterize"), datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
+		val loggingRasterizer = { a:String =>
+			val res = rasterizer(a)
+			refLogger(res)
+			res
+		}
+		
 		val rasterizationUri = rasterizer( compoundImageUri )
 
 		if( targetType == "raster-image" ) {
@@ -217,6 +216,8 @@ object ComposeCommand
 		}
 		
 		//// Pagify
+		
+		val htmlizer = new CompoundImageHTMLizer( getCache(functionCacheDir, "htmlization"), datastore, imageInfoExtractor, rasterizer, refLogger )
 		
 		val pageUri = htmlizer.pagify( compoundImageUri )
 		refLogger( pageUri )
