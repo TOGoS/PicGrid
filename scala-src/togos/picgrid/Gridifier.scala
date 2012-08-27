@@ -33,14 +33,14 @@ class ImageEntry( val name:String, val info:ImageInfo )
 trait GridificationMethod
 {
 	def configString:String
-	def gridify( images:List[ImageEntry] ):List[CompoundImageComponent]
+	def gridify( images:Seq[ImageEntry] ):List[CompoundImageComponent]
 }
 
 class RowlyGridificationMethod extends GridificationMethod
 {
 	def configString = "rowly-default"
 	
-	def gridifyRows( images:List[ImageEntry], imagesPerRow:Int ):List[CompoundImageComponent] = {
+	def gridifyRows( images:Seq[ImageEntry], imagesPerRow:Int ):List[CompoundImageComponent] = {
 		var rows = ListBuffer[List[ImageEntry]]()
 		var row = ListBuffer[ImageEntry]()
 		for( i <- images ) {
@@ -79,7 +79,7 @@ class RowlyGridificationMethod extends GridificationMethod
 		components.toList
 	}
 	
-	def gridifyColumns( images:List[ImageEntry], imagesPerColumn:Int ):List[CompoundImageComponent] = {
+	def gridifyColumns( images:Seq[ImageEntry], imagesPerColumn:Int ):List[CompoundImageComponent] = {
 		var columns = ListBuffer[List[ImageEntry]]()
 		var column = ListBuffer[ImageEntry]()
 		for( i <- images ) {
@@ -118,7 +118,7 @@ class RowlyGridificationMethod extends GridificationMethod
 		components.toList
 	}
 	
-	def aspectRatio( components:List[CompoundImageComponent] ):Double = {
+	def aspectRatio( components:Seq[CompoundImageComponent] ):Double = {
 		var width, height = 0
 		for( c <- components ) {
 			if( c.x + c.width  > width  ) width  = c.x + c.width
@@ -132,7 +132,7 @@ class RowlyGridificationMethod extends GridificationMethod
 	val componentAreaRatioPower = 2
 	val componentAreaRatioWeight = 1
 	
-	def aspectRatioFitness( components:List[CompoundImageComponent] ):Double = {
+	def aspectRatioFitness( components:Seq[CompoundImageComponent] ):Double = {
 		val ar = aspectRatio( components )
 		var dist = 1.2 / ar;
 		if( dist < 1 ) dist = 1 / dist
@@ -147,7 +147,7 @@ class RowlyGridificationMethod extends GridificationMethod
 		*/
 	}
 	
-	def componentAreaRatioFitness( components:List[CompoundImageComponent] ):Double = {
+	def componentAreaRatioFitness( components:Seq[CompoundImageComponent] ):Double = {
 		var smallestArea = Integer.MAX_VALUE
 		var largestArea = 0
 		for( c <- components ) {
@@ -158,11 +158,11 @@ class RowlyGridificationMethod extends GridificationMethod
 		- Math.pow( largestArea.toDouble / smallestArea, componentAreaRatioPower ) * componentAreaRatioWeight
 	}
 	
-	def fitness( components:List[CompoundImageComponent] ):Double = {
+	def fitness( components:Seq[CompoundImageComponent] ):Double = {
 		aspectRatioFitness( components ) + componentAreaRatioFitness( components )
 	}
 	
-	def gridify( images:List[ImageEntry] ):List[CompoundImageComponent] = {
+	def gridify( images:Seq[ImageEntry] ):List[CompoundImageComponent] = {
 		var bestFitness = Double.NegativeInfinity
 		var bestResult:List[CompoundImageComponent] = null
 		var numRows = Math.sqrt(images.length).toInt - 3
@@ -290,7 +290,7 @@ class BitmapGridificationMethod extends GridificationMethod
 	val cellHeight = 104
 	val cellSpacing = 4
 
-	def fitAll( images:List[ImageEntry], bitmapWidth:Int, bitmapHeight:Int ):List[CompoundImageComponent] = {
+	def fitAll( images:Seq[ImageEntry], bitmapWidth:Int, bitmapHeight:Int ):List[CompoundImageComponent] = {
 		val bitmap = new Bitmap( bitmapWidth, bitmapHeight )
 		val components = new ListBuffer[CompoundImageComponent]
 		for( e <- images ) {
@@ -308,7 +308,7 @@ class BitmapGridificationMethod extends GridificationMethod
 		return components.toList
 	}
 		
-	def gridify( images:List[ImageEntry] ):List[CompoundImageComponent] = {
+	def gridify( images:Seq[ImageEntry] ):List[CompoundImageComponent] = {
 		var totalWidth :Double = 0
 		var totalHeight:Double = 0
 		var totalArea  :Double = 0
@@ -389,7 +389,7 @@ class Gridifier(
 		}
 	}
 	
-	def gridify( images:List[ImageEntry], name:String, generatedFromUri:String ):ImageEntry = {
+	def gridify( images:Seq[ImageEntry], name:String, generatedFromUri:String ):ImageEntry = {
 		if( images.length == 0 ) return null
 		if( images.length == 1 ) return images.head
 		
@@ -411,7 +411,7 @@ class Gridifier(
 	}
 	
 	
-	def gridifyDir( dir:List[DirectoryEntry], name:String, generatedFromUri:String ):ImageEntry = {
+	def gridifyDir( dir:Seq[DirectoryEntry], name:String, generatedFromUri:String ):ImageEntry = {
 		gridify( dir.map( e => gridify(e) ).filter( e => e != null ), name, generatedFromUri )
 	}
 	
