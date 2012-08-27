@@ -44,7 +44,8 @@
 
 -outjar PicGrid.jar
 
-#-keep public class togos.picgrid.**
+-keep class togos.**
+-keep class togos.** { *; }
 
 -keep public class togos.picgrid.app.PicGridCommand {
     public static void main(java.lang.String[]);
