@@ -11,17 +11,15 @@ import togos.blob.ByteChunk
 import togos.ccouch2.store.Store
 import java.lang.Integer
 
-@serializable
 @SerialVersionUID(1)
 class ImageInfo(
 	val uri:String, val sourceUri:String,
 	val width:Int, val height:Int,
 	val totalImageCount:Int
-)
+) extends Serializable
 
-@serializable
 @SerialVersionUID(1)
-class ImageEntry( val name:String, val info:ImageInfo )
+class ImageEntry( val name:String, val info:ImageInfo ) extends Serializable
 
 trait GridificationMethod
 {
