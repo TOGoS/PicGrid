@@ -15,7 +15,7 @@ import togos.picgrid.file.FileUtil
 import java.io.FileWriter
 import togos.picgrid.image.ImageInfoExtractor
 import togos.picgrid.image.ImageMagickCropResizer
-import togos.picgrid.RowlyGridificationMethod
+import togos.picgrid.layout.RowlyLayouter
 import togos.picgrid.Gridifier
 import togos.picgrid.CompoundImageRasterizer
 import togos.picgrid.CompoundImageHTMLizer
@@ -168,7 +168,7 @@ object ComposeCommand
 		
 		val imageInfoExtractor = new ImageInfoExtractor( getCache(functionCacheDir, "image-dimensions"), datastore )
 		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert )
-		val gridificationMethod = new RowlyGridificationMethod
+		val gridificationMethod = new RowlyLayouter
 		val gridifier = new Gridifier( getCache(functionCacheDir, "gridification"), datastore, imageInfoExtractor, gridificationMethod )
 		
 		val compoundImageUri = sourceType match {
