@@ -47,6 +47,24 @@
 -keep class togos.**
 -keep class togos.** { *; }
 
+# ProGuard complains about these.
+# Maybe we could ignore them?
+#-keep class scala.Function1
+#-keep class scala.Tuple2
+#-keep class scala.runtime.IntRef
+#-keep class scala.runtime.FloatRef
+#-keep class scala.runtime.DoubleRef
+#-keep class scala.runtime.ObjectRef
+#-keep class scala.collection.Seq
+#-keep class scala.collection.immutable.List
+#-keep class scala.collection.mutable.ListBuffer
+#-keep class scala.collection.mutable.ArrayBuffer
+# Since we're not obfuscating anything, the notes are useless
+-dontnote
+
+# Someone on the internet said this about something:
+#-dontskipnonpubliclibraryclassmembers
+
 -keep public class togos.picgrid.app.PicGridCommand {
     public static void main(java.lang.String[]);
 }
