@@ -1,3 +1,9 @@
+- New gridification method (see below)
+- Compose should allow filesystem objects to be passed on the command line
+  and store them itself (should be able to steal directory serialization from ccouch3)
+- Include a utility for recursively scanning emitted HTML files for URNs
+  and writing them all to STDOUT.
+
 == New gridification method ==
 
 For a given set of images with weights (these weights can
@@ -15,9 +21,8 @@ hold onto those configurations and their fitness values.
 
 Repeat the 2 steps but making columns instead of rows.
 
-== Flexibility ==
+= Done =
 
-Break program into smaller parts that can be run separately.
-
-Include a utility for scanning emitted HTML files for URNs
-and writing them all to STDOUT.
+* Break program into smaller parts that can be run separately.
+  (compose can accept directories or compound image files and
+  can emit compound images, raster images, or HTML)
