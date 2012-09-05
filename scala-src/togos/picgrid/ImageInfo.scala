@@ -1,8 +1,9 @@
 package togos.picgrid
 
-@SerialVersionUID(1)
+@SerialVersionUID(2)
 class ImageInfo(
 	val uri:String, val sourceUri:String,
 	val width:Int, val height:Int,
-	val totalImageCount:Int
+	val totalImageCount:Int,
+	val totalByteCount:Long
 ) extends Serializable

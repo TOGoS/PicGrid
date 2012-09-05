@@ -123,4 +123,12 @@ class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:B
 		}
 		dims
 	}
+	
+	def getFileSize( uri:String ):Long = {
+		val blob = datastore(uri)
+		if( blob == null ) {
+			throw new FileNotFoundException("Couldn't find blob to get dimensions from: "+uri)
+		}
+		return blob.getSize()
+	}
 }

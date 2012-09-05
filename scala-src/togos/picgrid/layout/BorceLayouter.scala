@@ -5,27 +5,58 @@ import togos.picgrid.ImageEntry
 import scala.collection.mutable.ListBuffer
 import togos.picgrid.image.CompoundImageComponent
 
-class BorceLayouter extends Layouter
+class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 {
+	def configString = "borce:%dx%d".format(maxWidth,maxHeight)
+	
 	class ImageInfo( val w:Int, val h:Int, val weight:Float, val urn:String, val name:String )
 	class CellTree( val subTrees:Seq[CellTree], val image:ImageInfo ) {
 		def this( image:ImageInfo ) = this( List.empty, image )
 		def this( subTree:Seq[CellTree] ) = this(subTree, null)
 	}
 	
-	def adjustWeight( w:Float ) = w * w
+	def adjustWeight( w:Float ) = math.sqrt(w).toFloat
+	
+	def weightSplitDiagram( weights:Seq[Float], splitPoint:Int ):String = {
+		var total = 0f
+		for( w <- weights ) total += w
+		val scale = 75 / total
+		val rWeights = for(w <- weights) yield math.round(w * scale)
+		var rTotal = 0
+		for( rWeight <- rWeights ) rTotal += rWeight
+		var dia = ""
+		var i = 0
+		for( rWeight <- rWeights ) {
+			dia += ((if(i % 2 == 0) "#" else "$") * rWeight)
+			i += 1
+		}
+		val rScale = rTotal / total
+		return (
+			"Split at " + splitPoint + "/" + weights.length + ":\n" + 
+			dia + "\n" + (" " * (rTotal / 2).toInt) + "^"
+		)
+	}
 	
 	def findSplitPoint( images:Seq[ImageInfo], totalWeight:Float ):Int = {
 		var midWeightIndex = 0
 		var prevWeight, nextWeight = 0f
+		val target = totalWeight / 2
 		while( midWeightIndex < images.size ) {
 			nextWeight = prevWeight + adjustWeight(images(midWeightIndex).weight)
-			if( totalWeight / 2 - prevWeight < nextWeight - totalWeight / 2 ) {
+			if( target - prevWeight < nextWeight - target ) {
 				return midWeightIndex
 			}
+			prevWeight = nextWeight
 			midWeightIndex += 1
 		}
-		midWeightIndex
+		
+		assert( midWeightIndex > 0, "Somehow mid-weight index is > 0; totalWeight = "+totalWeight+", weights = "+images.map(i => i.weight) )
+		assert( midWeightIndex < images.length, "Somehow mid-weight index is at end; totalWeight = "+totalWeight+", weights = "+images.map(i => i.weight) )
+		
+		//if( midWeightIndex == 0 ) return 1;
+		//if( midWeightIndex == images.length ) return images.length-1;
+		
+		return midWeightIndex
 	}
 	
 	def partition( images:Seq[ImageInfo] ):CellTree = {
@@ -42,12 +73,15 @@ class BorceLayouter extends Layouter
 			totalWeight += adjustWeight(image.weight)
 		}
 		
+		//val midWeightIndex = math.round( (images.length / 2f + findSplitPoint(images, totalWeight)) / 2f )
 		val midWeightIndex = findSplitPoint(images, totalWeight)
+		
+		// System.out.println( weightSplitDiagram(for(i<-images) yield i.weight, midWeightIndex) )
 		
 		return new CellTree( List( partition(images.slice(0,midWeightIndex)), partition(images.slice(midWeightIndex,images.size)) ) )
 	}
 	
-	class LayoutComponent( val x:Int,val y:Int,val w:Int, val h:Int, l:Layout )
+	class LayoutComponent( val x:Int,val y:Int,val w:Int, val h:Int, val l:Layout )
 	class Layout( val w:Int, val h:Int, val components:Seq[LayoutComponent], val image:ImageInfo ) {
 		def this( w:Int, h:Int, components:Seq[LayoutComponent] ) = this(w,h,components,null)
 		def this( w:Int, h:Int, image:ImageInfo ) = this(w,h,List.empty,image)
@@ -55,22 +89,29 @@ class BorceLayouter extends Layouter
 	
 	def swap( x:Int, y:Int, really:Boolean ):(Int,Int) = if( really ) (x,y) else (y,x)
 	
-	def _layout( subLayouts:Seq[Layout], maxWidth:Int, maxHeight:Int, vertical:Boolean ):Layout = {
-		val (maxA, maxB) = swap(maxWidth, maxHeight, vertical)
+	def _layout( subLayouts:Seq[Layout], maxSB:Int, vertical:Boolean ):Layout = {
 		var a, b = 0
 		
 		var components = List[LayoutComponent]()
 		
 		for( subLayout <- subLayouts ) {
+			/*
+			val scaledWidth = (subLayout.w * maxSB.toFloat / subLayout.h).toInt
+			components = new LayoutComponent( a, b, scaledWidth, maxSB, subLayout ) :: components
+			a += scaledWidth
+			*/
+			
 			val (slSA,slSB) = swap(subLayout.w, subLayout.h, vertical)
-			val scaledSA = (slSA * (maxB.toFloat/slSB)).toInt
+			val scaledSA = (slSA * (maxSB.toFloat/slSB)).toInt // remove toInt?
 			val (slX,slY) = swap(a, b, vertical)
-			val (slW,slH) = swap(slSA,slSB, vertical)
+			val (slW,slH) = swap(scaledSA,maxSB, vertical)
 			components = new LayoutComponent( slX, slY, slW, slH, subLayout ) :: components
+			a += scaledSA
 		}
 		
-		val (w,h) = swap(a,maxB,vertical)
+		val (w,h) = swap(a,maxSB,vertical)
 		return new Layout( w, h, components )
+		//return new Layout( a, maxSB, components )
 	}
 	
 	def ratio( x:Float, y:Float ):Float = if(x>y) x / y else y / x
@@ -88,8 +129,10 @@ class BorceLayouter extends Layouter
 		}
 		subLayouts = subLayouts.reverse
 		
-		val h = _layout( subLayouts, maxWidth, maxHeight, false )
-		val v = _layout( subLayouts, maxWidth, maxHeight, true  )
+		// return _layout( subLayouts,  maxHeight, false )
+		
+		val h = _layout( subLayouts, maxHeight, false )
+		val v = _layout( subLayouts, maxWidth,  true  )
 		if( ratio(h.w,h.h) < ratio(v.w,v.h) ) h else v
 	}
 	
@@ -99,162 +142,65 @@ class BorceLayouter extends Layouter
 		return (beginX,beginY,endX-beginX,endY-beginY)
 	}
 	
-	def layoutToCells( l:Layout, x:Float, y:Float, w:Float, h:Float ):Seq[CompoundImageComponent] = {
-		if( l.image.urn != null ) {
+	def layoutToCells( l:Layout, x:Float, y:Float, w:Float, h:Float, cellDest:(CompoundImageComponent => Unit) ) {
+		if( l.image != null ) {
 			val (cx,cy,cw,ch) = roundBounds(x,y,w,h)
-			return List(new CompoundImageComponent(cx, cy, cw, ch, l.image.urn, l.image.name))
+			cellDest( new CompoundImageComponent(cx, cy, cw, ch, l.image.urn, l.image.name) )
+		} else {
+			val scaleX = w / l.w; val scaleY = h / l.h
+			for( lc <- l.components ) {
+				layoutToCells( lc.l,
+					x + scaleX*lc.x, y + scaleY*lc.y,
+					    scaleX*lc.w,     scaleY*lc.h,
+				cellDest )
+			}
 		}
-		null
 	}
 	
-	
-	
-	
-	
-	
-	//// Blah old stuffs
-	
-	def configString = "borce-default"
-	
-	def gridifyRows( images:Seq[ImageEntry], imagesPerRow:Int ):List[CompoundImageComponent] = {
-		var rows = ListBuffer[List[ImageEntry]]()
-		var row = ListBuffer[ImageEntry]()
-		for( i <- images ) {
-			if(row.length > imagesPerRow ) {
-				rows += row.toList
-				row = ListBuffer[ImageEntry]()
-			}
-			row += i
-		}
-		if( row.length > 0 ) rows += row.toList
-		
-		val components = ListBuffer[CompoundImageComponent]()
-		var totalWidth = 1024
-		var totalImageCount = 0
-		var spacing = 4
-		var y = 0
-		for( row <- rows ) {
-			var imageSpaceAvailable = totalWidth - (row.length - 1) * spacing
-			var imageWidthRatio = 0f // sum(w/h)
-			for( e <- row ) {
-				val i = e.info
-				imageWidthRatio += i.width.toFloat / i.height
-			}
-			val rowHeight = (imageSpaceAvailable / imageWidthRatio)
-			var x = 0f
-			for( e <- row ) {
-				val i = e.info
-				val cellWidth = i.width * rowHeight / i.height
-				components += new CompoundImageComponent( x.toInt, y, cellWidth.toInt, rowHeight.toInt, i.uri, e.name )
-				x += cellWidth + spacing
-				totalImageCount += i.totalImageCount
-			}
-			y += rowHeight.toInt + spacing
-		}
-		
-		components.toList
+	def fitInside( w:Float, h:Float, maxWidth:Float, maxHeight:Float ):(Float,Float) = {
+		if( w <= maxWidth && h <= maxHeight ) return (w,h)
+		val ratio = math.min( maxWidth / w, maxHeight / h )
+		return (w * ratio, h * ratio)
 	}
 	
-	def gridifyColumns( images:Seq[ImageEntry], imagesPerColumn:Int ):List[CompoundImageComponent] = {
-		var columns = ListBuffer[List[ImageEntry]]()
-		var column = ListBuffer[ImageEntry]()
-		for( i <- images ) {
-			if(column.length > imagesPerColumn ) {
-				columns += column.toList
-				column = ListBuffer[ImageEntry]()
-			}
-			column += i
-		}
-		if( column.length > 0 ) columns += column.toList
-		
-		val components = ListBuffer[CompoundImageComponent]()
-		var totalHeight = 1024
-		var totalImageCount = 0
-		var spacing = 4
-		var x = 0
-		for( column <- columns ) {
-			var imageSpaceAvailable = totalHeight - (column.length - 1) * spacing
-			var imageHeightRatio = 0f // sum(h/w)
-			for( e <- column ) {
-				val i = e.info
-				imageHeightRatio += i.height.toFloat / i.width
-			}
-			val rowWidth = (imageSpaceAvailable / imageHeightRatio)
-			var y = 0f
-			for( e <- column ) {
-				val i = e.info
-				val cellHeight = i.height * rowWidth / i.width
-				components += new CompoundImageComponent( x, y.toInt, rowWidth.toInt, cellHeight.toInt, i.uri, e.name )
-				y += cellHeight + spacing
-				totalImageCount += i.totalImageCount
-			}
-			x += rowWidth.toInt + spacing
-		}
-		
-		components.toList
+	def imageEntriesToInfo( entries:Seq[ImageEntry] ):Seq[ImageInfo] = {
+		for( e <- entries ) yield new ImageInfo( e.info.width, e.info.height, e.info.totalByteCount, e.info.uri, e.name )
 	}
 	
-	def aspectRatio( components:Seq[CompoundImageComponent] ):Double = {
-		var width, height = 0
-		for( c <- components ) {
-			if( c.x + c.width  > width  ) width  = c.x + c.width
-			if( c.y + c.height > height ) height = c.y + c.height
-		}
-		width.toDouble / height
-	}
+	/**
+	 * Shrinks the component by s pixels on each side.
+	 */
+	def bordify( c:CompoundImageComponent, s:Int ) =
+		new CompoundImageComponent( c.x + s, c.y + s, c.width - s*2, c.height - s*2, c.uri, c.name )
 	
-	val aspectRatioPower = 2
-	val aspectRatioWeight = 2
-	val componentAreaRatioPower = 2
-	val componentAreaRatioWeight = 1
-	
-	def aspectRatioFitness( components:Seq[CompoundImageComponent] ):Double = {
-		val ar = aspectRatio( components )
-		var dist = 1.2 / ar;
-		if( dist < 1 ) dist = 1 / dist
-		- math.pow( dist, aspectRatioPower ) * aspectRatioWeight
+	def gridify( entries:Seq[ImageEntry], maxWidth:Int, maxHeight:Int ):List[CompoundImageComponent] = {
+		val l = layout( partition( imageEntriesToInfo(entries) ) )
+		val (w,h) = fitInside( l.w, l.h, maxWidth, maxHeight )
+		var cells = List[CompoundImageComponent]()
+		val spacing = 4
+		val halfSpacing = spacing/2
 		
 		/*
-		if( ar > 2.0 ) return (1.6 - ar)/1.0
-		if( ar > 1.6 ) return (1.6 - ar)/1.6
-		if( ar < 0.7 ) return (ar - 0.7)/0.7
-		if( ar < 0.5 ) return (ar - 0.7)/0.1
-		return 0
+		layoutToCells( l, 0, 0, w, h,
+			(c:CompoundImageComponent) => cells = c :: cells
+		)
 		*/
-	}
-	
-	def componentAreaRatioFitness( components:Seq[CompoundImageComponent] ):Double = {
-		var smallestArea = Integer.MAX_VALUE
-		var largestArea = 0
-		for( c <- components ) {
-			val area = c.width * c.height
-			if( area < smallestArea ) smallestArea = area
-			if( area > largestArea ) largestArea = area
+		layoutToCells( l, -halfSpacing, -halfSpacing, w+spacing, h+spacing,
+			(c:CompoundImageComponent) => cells = bordify(c,halfSpacing) :: cells
+		)
+		
+		
+		// Sanity checks
+		for( c <- cells ) {
+			assert( c.width > 0                , "Cell width is <= 0: "+c )
+			assert( c.height > 0               , "Cell height is <= 0: "+c )
+			assert( c.x >= 0                   , "Cell X pos is < 0: "+c )
+			assert( c.y >= 0                   , "Cell Y pos is < 0: "+c )
+			assert( c.x + c.width  <= maxWidth , "Cell X+width is > "+maxWidth+": "+c )
+			assert( c.y + c.height <= maxHeight, "Cell Y+height is > "+maxHeight+": "+c )
 		}
-		- math.pow( largestArea.toDouble / smallestArea, componentAreaRatioPower ) * componentAreaRatioWeight
+		return cells
 	}
 	
-	def fitness( components:Seq[CompoundImageComponent] ):Double = {
-		aspectRatioFitness( components ) + componentAreaRatioFitness( components )
-	}
-	
-	def gridify( images:Seq[ImageEntry] ):List[CompoundImageComponent] = {
-		var bestFitness = Double.NegativeInfinity
-		var bestResult:List[CompoundImageComponent] = null
-		var numRows = math.sqrt(images.length).toInt - 3
-		if( numRows < 1 ) numRows = 1
-		var i = 0
-		while( i < 6 ) {
-			val results = List(gridifyRows( images, numRows + i ), gridifyColumns( images, numRows + i ))
-			for( result <- results ) {
-				val fit = fitness( result )
-				if( fit > bestFitness ) {
-					bestResult = result
-					bestFitness = fit
-				}
-			}
-			i += 1
-		}
-		bestResult
-	}
+	def gridify( images:Seq[ImageEntry] ) = gridify(images, maxWidth, maxHeight)
 }

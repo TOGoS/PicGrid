@@ -37,7 +37,7 @@ class Gridifier(
 		val dims = infoExtractor.getImageDimensions( uri )
 		if( dims == null ) return null
 		val (w,h) = dims
-		new ImageEntry( name, new ImageInfo( uri, uri, w, h, 1 ) )
+		new ImageEntry( name, new ImageInfo( uri, uri, w, h, 1, infoExtractor.getFileSize(uri) ) )
 	}
 	
 	def gridify( e:DirectoryEntry ):ImageEntry = {
@@ -58,7 +58,11 @@ class Gridifier(
 		val components = gridificationMethod.gridify( images )
 		
 		var totalImageCount = 0
-		for( image <- images ) totalImageCount += image.info.totalImageCount
+		var totalByteCount  = 0l
+		for( image <- images ) {
+			totalImageCount += image.info.totalImageCount
+			totalByteCount += image.info.totalByteCount
+		}
 		
 		var width, height = 0
 		for( c <- components ) {
@@ -66,10 +70,10 @@ class Gridifier(
 			if( c.y + c.height > height ) height = c.y + c.height
 		}
 		
-		val ci = new CompoundImage( width, height, components, null, null, totalImageCount, generatedFromUri )
+		val ci = new CompoundImage( width, height, components, null, null, generatedFromUri, totalImageCount, totalByteCount )
 		
 		val uri = datastore.store( ci.serialize() )
-		new ImageEntry( name, new ImageInfo( uri, generatedFromUri, ci.width, ci.height, ci.totalImageCount ) )
+		new ImageEntry( name, new ImageInfo( uri, generatedFromUri, ci.width, ci.height, ci.totalImageCount, ci.totalByteCount ) )
 	}
 	
 	

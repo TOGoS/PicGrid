@@ -24,8 +24,11 @@ class CompoundImageComponent(
 class CompoundImage(
 	val width:Int, val height:Int,
 	val components:Seq[CompoundImageComponent],
-	val promotedImage1Uri:String, val promotedImage2Uri:String,
-	val totalImageCount:Int, val generatedFromUri:String
+	val promotedImage1Uri:String,
+	val promotedImage2Uri:String,
+	val generatedFromUri:String,
+	val totalImageCount:Int,
+	val totalByteCount:Long
 ) {
 	def aspectRatio = width.toFloat / height
 	
@@ -44,11 +47,16 @@ class CompoundImage(
 		if( generatedFromUri != null ) {
 			sb.append("GENERATED-FROM "+generatedFromUri+"\n")
 		}
-		sb.append("TOTAL-IMAGE-COUNT "+totalImageCount+"\n")
+		if( totalImageCount != -1 ) {
+			sb.append("TOTAL-IMAGE-COUNT "+totalImageCount+"\n")
+		}
+		if( totalByteCount != -1 ) {
+			sb.append("TOTAL-BYTE-COUNT "+totalImageCount+"\n")
+		}
 		sb.toString()
 	}
 	
-	def withoutMetadata = new CompoundImage( width, height, components, null, null, 0, null )
+	def withoutMetadata = new CompoundImage( width, height, components, null, null, null, -1, -1 )
 	
 	lazy val graphicUrn = "urn:sha1:"+DigestUtil.sha1Base32(withoutMetadata.serialize())
 }
@@ -59,6 +67,7 @@ object CompoundImage
 	val PROMOTE2_LINE  = """^PROMOTE2 (\S+)$""".r
 	val COMPONENT_LINE = """^COMPONENT (\d+),(\d+),(\d+),(\d+) (\S+)(?:\s+name='((?:[^'\\]|\\.)*)')?$""".r
 	val COUNT_LINE     = """^TOTAL-IMAGE-COUNT (\d+)$""".r
+	val SIZE_LINE      = """^TOTAL-BYTE-COUNT (\d+)$""".r
 	val SOURCE_LINE    = """^GENERATED-FROM (\S+)$""".r
 	
 	def unserialize( b:ByteBlob ):CompoundImage = {
@@ -67,7 +76,8 @@ object CompoundImage
 		var width,height = 0
 		var components = new ListBuffer[CompoundImageComponent]()
 		var promotedImage1Uri, promotedImage2Uri : String = null
-		var totalImageCount = components.length
+		var totalImageCount = -1
+		var totalByteCount  = -1l
 		var generatedFromUri:String = null
 		while( line != null ) {
 			line match {
@@ -76,6 +86,8 @@ object CompoundImage
 					height = h.toInt
 				case COUNT_LINE(c) =>
 					totalImageCount = c.toInt
+				case SIZE_LINE(c) =>
+					totalByteCount = c.toLong
 				case SOURCE_LINE(c) =>
 					generatedFromUri = c
 				case PROMOTE1_LINE(uri) =>
@@ -87,7 +99,7 @@ object CompoundImage
 			}
 			line = br.readLine()
 		}
-		new CompoundImage( width, height, components.toList, promotedImage1Uri, promotedImage2Uri, totalImageCount, generatedFromUri )
+		new CompoundImage( width, height, components.toList, promotedImage1Uri, promotedImage2Uri, generatedFromUri, totalImageCount, totalByteCount )
 	}
 	
 	implicit def compoundImageAsBlob( i:CompoundImage ):ByteBlob = i.serialize()

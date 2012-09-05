@@ -6,5 +6,5 @@ import togos.picgrid.image.CompoundImageComponent
 trait Layouter
 {
 	def configString:String
-	def gridify( images:Seq[ImageEntry] ):List[CompoundImageComponent]
+	def gridify( images:Seq[ImageEntry] ):Seq[CompoundImageComponent]
 }
