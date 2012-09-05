@@ -31,8 +31,8 @@ class FSSHA1Datastore(val dir: File, val extraReadDirs: List[String] = List()) e
 	protected def tempFileFor( sha1:String ):File = {
 		new File(dir + "/" + sha1.substring(0,2) + "/." + sha1 + ".temp-" + (math.random*Integer.MAX_VALUE).toInt)
 	}
-
-	def apply(uri: String): ByteBlob = {
+	
+	def apply( uri:String ):ByteBlob = {
 		uri match {
 			case BITPRINT_REGEX(sha1, tt) =>
 				val sp = subSectorPath(sha1)
@@ -44,13 +44,13 @@ class FSSHA1Datastore(val dir: File, val extraReadDirs: List[String] = List()) e
 		}
 		null
 	}
-
+	
 	/**
 	 * @param data the data to be identified
 	 * @param chunkCallback will be called for each chunk of data as it is processed
 	 * @return (full bitprint URN, base32-encoded SHA1)
 	 */
-	def identify(data: ByteBlob, chunkCallback: ByteChunk => Unit = null): (String, String) = {
+	def identify( data:ByteBlob, chunkCallback:ByteChunk => Unit = null ):(String,String) = {
 		val digestor = new BitprintDigest()
 		val chunkIter = data.chunkIterator()
 		while (chunkIter.hasNext()) {
@@ -66,8 +66,8 @@ class FSSHA1Datastore(val dir: File, val extraReadDirs: List[String] = List()) e
 		val sha1String = Base32.encode(sha1Hash)
 		return ("urn:bitprint:" + sha1String + "." + Base32.encode(tigerTreeHash), sha1String)
 	}
-
-	protected def storeAndDelete(tempFile: File, destFile: File) = {
+	
+	protected def storeAndDelete( tempFile:File, destFile:File ) = {
 		if (destFile.exists()) {
 			if (!tempFile.delete()) {
 				// Then try again later, I guess.
@@ -78,11 +78,8 @@ class FSSHA1Datastore(val dir: File, val extraReadDirs: List[String] = List()) e
 			tempFile.renameTo(destFile)
 		}
 	}
-
-	/**
-	 *
-	 */
-	def store(data: ByteBlob): String = {
+	
+	def store( data:ByteBlob ):String = {
 		val tempFile = this.tempFile()
 		makeParentDirs(tempFile)
 		val fos = new FileOutputStream(tempFile)
@@ -93,8 +90,8 @@ class FSSHA1Datastore(val dir: File, val extraReadDirs: List[String] = List()) e
 
 		urn
 	}
-
-	def +=(data: ByteBlob): String = store(data)
+	
+	def +=( data:ByteBlob ):String = store(data)
 
 	/**
 	 * Import an existing temporary file, moving it directly into the repository, returning its URN
@@ -102,14 +99,14 @@ class FSSHA1Datastore(val dir: File, val extraReadDirs: List[String] = List()) e
 	def storeAndRemove(tempFile: File): String = {
 		val fileBlob = new FileBlob(tempFile)
 		val (urn, sha1String) = identify(fileBlob)
-
+		
 		storeAndDelete(tempFile, fullPathTo(sha1String))
-
+		
 		urn
 	}
 }
 object FSSHA1Datastore {
-	def main(args: Array[String]) {
+	def main( args:Array[String] ) {
 		var datastoreDir: File = null
 		var command: String = null
 		var bareArgs: ListBuffer[String] = new ListBuffer[String]()
@@ -129,7 +126,7 @@ object FSSHA1Datastore {
 			}
 			i += 1
 		}
-
+		
 		command match {
 			case "store" =>
 				if (datastoreDir == null) {
