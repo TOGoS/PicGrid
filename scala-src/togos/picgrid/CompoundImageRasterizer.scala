@@ -33,7 +33,11 @@ class CompoundImageRasterizer(
 		if( imageType == ImageFormat.COMPOSITE ) {
 			var rasterizedUri:String = functionCache( imageUri )
 			if( rasterizedUri == null ) {
-				val ci = CompoundImage.unserialize( datastore( imageUri ) )
+				val ciData = datastore( imageUri )
+				if( ciData == null ) {
+					throw new Exception("Can't find "+imageUri+" to rasterize it.")
+				}
+				val ci = CompoundImage.unserialize( ciData )
 				rasterizedUri = functionCache( ci.graphicUrn )
 				if( rasterizedUri == null ) {
 					rasterizedUri = rasterize( ci )

@@ -7,7 +7,7 @@ package togos.picgrid.util
 object StringEscape
 {
 	def escape( str:String ):String = {
-		assert( str != null )
+		if( str == null ) return null
 		
 		val rez = new StringBuilder()
 		var i = 0
@@ -27,6 +27,7 @@ object StringEscape
 	}
 	
 	def unescape( str:String ):String = {
+		if( str == null ) return null
 		if( !str.contains("\\") ) return str
 		
 		val rez = new StringBuilder()
