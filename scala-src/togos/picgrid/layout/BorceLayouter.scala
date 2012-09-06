@@ -10,75 +10,141 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 	def configString = "borce:%dx%d".format(maxWidth,maxHeight)
 	
 	class ImageInfo( val w:Int, val h:Int, val weight:Float, val urn:String, val name:String )
-	class CellTree( val subTrees:Seq[CellTree], val image:ImageInfo ) {
-		def this( image:ImageInfo ) = this( List.empty, image )
-		def this( subTree:Seq[CellTree] ) = this(subTree, null)
+	class CellTree( val subTrees:Seq[CellTree], val image:ImageInfo, val weight:Float ) {
+		def this( image:ImageInfo ) = this( List.empty, image, image.weight )
+		def this( subTrees:Seq[CellTree] ) = this(subTrees, null, subTrees.map(_.weight).sum)
 	}
 	
-	def adjustWeight( w:Float ) = math.sqrt(w).toFloat
-	
-	def weightSplitDiagram( weights:Seq[Float], splitPoint:Int ):String = {
-		var total = 0f
-		for( w <- weights ) total += w
-		val scale = 75 / total
-		val rWeights = for(w <- weights) yield math.round(w * scale)
-		var rTotal = 0
-		for( rWeight <- rWeights ) rTotal += rWeight
-		var dia = ""
-		var i = 0
-		for( rWeight <- rWeights ) {
-			dia += ((if(i % 2 == 0) "#" else "$") * rWeight)
-			i += 1
-		}
-		val rScale = rTotal / total
-		return (
-			"Split at " + splitPoint + "/" + weights.length + ":\n" + 
-			dia + "\n" + (" " * (rTotal / 2).toInt) + "^"
-		)
-	}
-	
-	def findSplitPoint( images:Seq[ImageInfo], totalWeight:Float ):Int = {
-		var midWeightIndex = 0
-		var prevWeight, nextWeight = 0f
-		val target = totalWeight / 2
-		while( midWeightIndex < images.size ) {
-			nextWeight = prevWeight + adjustWeight(images(midWeightIndex).weight)
-			if( target - prevWeight < nextWeight - target ) {
-				return midWeightIndex
+	class Partitioner( val weightFunction:(Float=>Float), val weightWeight:Int, val countWeight:Int ) {
+		def weightSplitDiagram( weights:Seq[Float], splitPoint:Int ):String = {
+			var total = 0f
+			for( w <- weights ) total += w
+			val scale = 75 / total
+			val rWeights = for(w <- weights) yield math.round(w * scale)
+			var rTotal = 0
+			for( rWeight <- rWeights ) rTotal += rWeight
+			var dia = ""
+			var i = 0
+			for( rWeight <- rWeights ) {
+				dia += ((if(i % 2 == 0) "#" else "$") * rWeight)
+				i += 1
 			}
-			prevWeight = nextWeight
-			midWeightIndex += 1
+			val rScale = rTotal / total
+			return (
+				"Split at " + splitPoint + "/" + weights.length + ":\n" + 
+				dia + "\n" + (" " * (rTotal / 2).toInt) + "^"
+			)
 		}
 		
-		assert( midWeightIndex > 0, "Somehow mid-weight index is > 0; totalWeight = "+totalWeight+", weights = "+images.map(i => i.weight) )
-		assert( midWeightIndex < images.length, "Somehow mid-weight index is at end; totalWeight = "+totalWeight+", weights = "+images.map(i => i.weight) )
+		def findSplitPoint( images:Seq[ImageInfo], totalWeight:Float ):Int = {
+			var midWeightIndex = 0
+			var prevWeight, nextWeight = 0f
+			val target = totalWeight / 2
+			while( midWeightIndex < images.size ) {
+				nextWeight = prevWeight + weightFunction(images(midWeightIndex).weight)
+				if( target - prevWeight < nextWeight - target ) {
+					return midWeightIndex
+				}
+				prevWeight = nextWeight
+				midWeightIndex += 1
+			}
+			
+			assert( midWeightIndex > 0, "Somehow mid-weight index is > 0; totalWeight = "+totalWeight+", weights = "+images.map(i => i.weight) )
+			assert( midWeightIndex < images.length, "Somehow mid-weight index is at end; totalWeight = "+totalWeight+", weights = "+images.map(i => i.weight) )
+			
+			return midWeightIndex
+		}
 		
-		//if( midWeightIndex == 0 ) return 1;
-		//if( midWeightIndex == images.length ) return images.length-1;
-		
-		return midWeightIndex
+		def partition( images:Seq[ImageInfo] ):CellTree = {
+			if( images.size == 0 ) {
+				throw new Exception("Image list is empty!  Can't build CellTree from it.")
+			} else if( images.size == 1 ) {
+				return new CellTree( images(0) )
+			} else if( images.size == 2 ) {
+				return new CellTree( List(new CellTree(images(0)), new CellTree(images(1))) )
+			}
+			
+			var totalWeight = 0f
+			for( image <- images ) {
+				totalWeight += weightFunction(image.weight)
+			}
+			
+			val midWeightIndex = math.round( (weightWeight * (images.length / 2f) + countWeight * findSplitPoint(images, totalWeight)) / (weightWeight + countWeight) )
+			
+			//System.err.println( weightSplitDiagram(for(i<-images) yield i.weight, midWeightIndex) )
+			
+			return new CellTree( List( partition(images.slice(0,midWeightIndex)), partition(images.slice(midWeightIndex,images.size)) ) )
+		}
 	}
+	
+	val partitioners = List(
+		new Partitioner( i => math.sqrt(i).toFloat, 0, 1 ),
+		new Partitioner( i => math.sqrt(i).toFloat, 1, 2 ),
+		new Partitioner( i => math.sqrt(i).toFloat, 2, 2 ),
+		new Partitioner( i => math.sqrt(i).toFloat, 2, 1 ),
+		new Partitioner( i => math.sqrt(i).toFloat, 1, 0 ),
+		new Partitioner( i => i.toFloat, 0, 1 ),
+		new Partitioner( i => i.toFloat, 0, 2 ),
+		new Partitioner( i => i.toFloat, 2, 2 ),
+		new Partitioner( i => i.toFloat, 2, 1 ),
+		new Partitioner( i => i.toFloat, 1, 0 ),
+		new Partitioner( i => i.toFloat, 0, 1 ),
+		new Partitioner( i => i * i.toFloat, 0, 2 ),
+		new Partitioner( i => i * i.toFloat, 2, 2 ),
+		new Partitioner( i => i * i.toFloat, 2, 1 ),
+		new Partitioner( i => i * i.toFloat, 1, 0 )
+	)
+	
+	def minDepth( ct:CellTree ):Int = {
+		if( ct.image != null ) return 0
+		
+		var min = Int.MaxValue
+		for( s <- ct.subTrees ) {
+			min = math.min( min, 1+minDepth(s) )
+		}
+		return min
+	}
+	
+	def maxDepth( ct:CellTree ):Int = {
+		var max = 0
+		for( s <- ct.subTrees ) {
+			max = math.max( max, 1+maxDepth(s) )
+		}
+		return max
+	}
+	
+	def fitness2( ct:CellTree ):Float = {
+		val l = ct.subTrees.length
+		val totalWeight = ct.weight
+		val expectedSubWeight = ct.weight / l
+		var fit = 0f
+		for( t <- ct.subTrees ) {
+			fit -= ratio(expectedSubWeight, t.weight) / l
+			fit += fitness(t) / l
+		}
+		return fit
+	}
+	
+	def fitness( ct:CellTree ):Float = fitness2(ct)/2 - maxDepth(ct)
 	
 	def partition( images:Seq[ImageInfo] ):CellTree = {
-		if( images.size == 0 ) {
-			throw new Exception("Image list is empty!  Can't build CellTree from it.")
-		} else if( images.size == 1 ) {
-			return new CellTree( images(0) )
-		} else if( images.size == 2 ) {
-			return new CellTree( List(new CellTree(images(0)), new CellTree(images(1))) )
+		var minFit = Float.MaxValue
+		var maxFit = Float.MinValue
+		var mostFit:CellTree = null
+		for( p <- partitioners ) {
+			val ct = p.partition(images)
+			val fit = fitness(ct)
+			// System.err.println("Fitness = "+fit)
+			if( fit < minFit ) {
+				minFit = fit
+			}
+			if( fit > maxFit ) {
+				mostFit = ct
+				maxFit = fit
+			}
 		}
-		
-		var totalWeight = 0f
-		for( image <- images ) {
-			totalWeight += adjustWeight(image.weight)
-		}
-		
-		//val midWeightIndex = math.round( (images.length / 2f + findSplitPoint(images, totalWeight)) / 2f )
-		val midWeightIndex = findSplitPoint(images, totalWeight)
-		
-		// System.out.println( weightSplitDiagram(for(i<-images) yield i.weight, midWeightIndex) )
-		
-		return new CellTree( List( partition(images.slice(0,midWeightIndex)), partition(images.slice(midWeightIndex,images.size)) ) )
+		// System.err.println("Min fit = "+minFit+", max fit = "+maxFit)
+		return mostFit
 	}
 	
 	class LayoutComponent( val x:Int,val y:Int,val w:Int, val h:Int, val l:Layout )
@@ -157,6 +223,12 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 		}
 	}
 	
+	def layoutToCells( l:Layout, x:Float, y:Float, w:Float, h:Float ):List[CompoundImageComponent] = {
+		var list = List[CompoundImageComponent]()
+		layoutToCells(l,x,y,w,h, (i => list = i :: list ) )
+		list
+	}
+	
 	def fitInside( w:Float, h:Float, maxWidth:Float, maxHeight:Float ):(Float,Float) = {
 		if( w <= maxWidth && h <= maxHeight ) return (w,h)
 		val ratio = math.min( maxWidth / w, maxHeight / h )
@@ -170,25 +242,38 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 	/**
 	 * Shrinks the component by s pixels on each side.
 	 */
-	def bordify( c:CompoundImageComponent, s:Int ) =
-		new CompoundImageComponent( c.x + s, c.y + s, c.width - s*2, c.height - s*2, c.uri, c.name )
+	def bordify( c:CompoundImageComponent, s1:Int, s2:Int ) =
+		new CompoundImageComponent( c.x + s1, c.y + s1, c.width - s1 - s2, c.height - s1 - s2, c.uri, c.name )
 	
 	def gridify( entries:Seq[ImageEntry], maxWidth:Int, maxHeight:Int ):List[CompoundImageComponent] = {
 		val l = layout( partition( imageEntriesToInfo(entries) ) )
 		val (w,h) = fitInside( l.w, l.h, maxWidth, maxHeight )
+		
+		val rawCells = layoutToCells( l, 0, 0, w, h )
+		var minSize:Int = Int.MaxValue
+		for( c <- rawCells ) {
+			minSize = math.min( minSize, math.min(c.height, c.width) )
+		}
+		
+		val spacing:Int =
+			if(       minSize >= 13 )
+				4
+			else if( minSize >= 9 )
+				3
+			else if( minSize >= 6 )
+				2
+			else if( minSize >= 4 )
+				1
+			else
+				0
+		
+		val spacing1:Int = math.floor(spacing/2f).toInt
+		val spacing2:Int = math.ceil( spacing/2f).toInt
+		
 		var cells = List[CompoundImageComponent]()
-		val spacing = 4
-		val halfSpacing = spacing/2
-		
-		/*
-		layoutToCells( l, 0, 0, w, h,
-			(c:CompoundImageComponent) => cells = c :: cells
+		layoutToCells( l, -spacing1, -spacing1, w+spacing1+spacing2, h+spacing1+spacing2,
+			(c:CompoundImageComponent) => cells = bordify(c,spacing1,spacing2) :: cells
 		)
-		*/
-		layoutToCells( l, -halfSpacing, -halfSpacing, w+spacing, h+spacing,
-			(c:CompoundImageComponent) => cells = bordify(c,halfSpacing) :: cells
-		)
-		
 		
 		// Sanity checks
 		for( c <- cells ) {
