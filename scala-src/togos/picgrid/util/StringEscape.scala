@@ -7,6 +7,8 @@ package togos.picgrid.util
 object StringEscape
 {
 	def escape( str:String ):String = {
+		assert( str != null )
+		
 		val rez = new StringBuilder()
 		var i = 0
 		while( i < str.length() ) {

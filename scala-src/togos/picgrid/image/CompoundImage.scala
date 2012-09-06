@@ -17,7 +17,7 @@ class CompoundImageComponent(
 	val uri:String, val name:String
 ) {
 	override def toString():String = {
-		x+","+y+","+width+","+height+" "+uri+" name='"+StringEscape(name)+"'"
+		x+","+y+","+width+","+height+" "+uri+(if(name != null) " name='"+StringEscape(name)+"'" else "")
 	}
 }
 

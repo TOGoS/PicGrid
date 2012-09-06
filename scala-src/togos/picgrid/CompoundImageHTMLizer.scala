@@ -16,8 +16,9 @@ class CompoundImageHTMLizer(
 	val referencedUriCallback:(String=>Unit)
 ) {
 	def url( urn:String, name:String ):String = {
+		assert( urn != null )
 		referencedUriCallback(urn)
-		"../" + uriEncodePathSegment(urn) + "/" + uriEncodePathSegment(name)
+		"../" + uriEncodePathSegment(urn) + "/" + uriEncodePathSegment(if(name != null) name else urn)
 	}
 	
 	def header( ciUri:String, ci:CompoundImage ) = {
