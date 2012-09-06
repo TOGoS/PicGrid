@@ -19,6 +19,8 @@ import togos.picgrid.layout.BorceLayouter
 import togos.picgrid.Gridifier
 import togos.picgrid.CompoundImageRasterizer
 import togos.picgrid.CompoundImageHTMLizer
+import togos.picgrid.image.ImageMagickFallback
+import togos.picgrid.image.ImageMagickFallbackSource
 
 object ComposeCommand
 {
@@ -167,7 +169,7 @@ object ComposeCommand
 		}
 		
 		val imageInfoExtractor = new ImageInfoExtractor( getCache(functionCacheDir, "image-dimensions"), datastore )
-		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert )
+		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert, new ImageMagickFallbackSource(datastore, ImageMagickCommands.convert) )
 		val gridificationMethod = new BorceLayouter( 1280, 800 )
 		val gridifier = new Gridifier( getCache(functionCacheDir, "gridification"), datastore, imageInfoExtractor, gridificationMethod )
 		
