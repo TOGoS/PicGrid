@@ -7,7 +7,7 @@ import togos.picgrid.image.CompoundImageComponent
 
 class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 {
-	def configString = "borce:%dx%d".format(maxWidth,maxHeight)
+	def cacheString = "borce-v1-%dx%d".format(maxWidth,maxHeight)
 	
 	class ImageInfo( val w:Int, val h:Int, val weight:Float, val urn:String, val name:String )
 	class CellTree( val subTrees:Seq[CellTree], val image:ImageInfo, val weight:Float ) {
@@ -60,8 +60,8 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 				throw new Exception("Image list is empty!  Can't build CellTree from it.")
 			} else if( images.size == 1 ) {
 				return new CellTree( images(0) )
-			} else if( images.size == 2 ) {
-				return new CellTree( List(new CellTree(images(0)), new CellTree(images(1))) )
+			} else if( images.size <= 2 ) {
+				return new CellTree( for(i<-images) yield new CellTree(i) )
 			}
 			
 			var totalWeight = 0f

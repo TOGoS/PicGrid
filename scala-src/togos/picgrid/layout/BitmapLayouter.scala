@@ -16,7 +16,7 @@ import togos.picgrid.SerializationUtil
 
 class BitmapLayouter extends Layouter
 {
-	def configString = "bitmap-default"
+	def cacheString = "bitmap-v1"
 	
 	class Bitmap( val width:Int, val height:Int ) {
 		val data = new Array[Boolean]( width*height )

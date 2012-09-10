@@ -7,7 +7,7 @@ import togos.picgrid.image.CompoundImageComponent
 
 class RowlyLayouter extends Layouter
 {
-	def configString = "rowly-default"
+	def cacheString = "rowly-v1"
 	
 	def gridifyRows( images:Seq[ImageEntry], imagesPerRow:Int ):List[CompoundImageComponent] = {
 		var rows = ListBuffer[List[ImageEntry]]()

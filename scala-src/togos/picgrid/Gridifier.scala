@@ -87,7 +87,7 @@ class Gridifier(
 		Base32.encode(sha1Hash)
 	}
 	
-	lazy val configHash = gridificationMethod.configString
+	lazy val configHash = gridificationMethod.cacheString
 	
 	def gridifyDir( uri:String, name:String ):ImageEntry = {
 		val cacheKey = configHash+":"+uri

@@ -1,10 +1,12 @@
-- New gridification method (see below)
+- Layouter that runs both borce and rowly (and any new ones you come up with)
+  and picks the most fit layout from all the results.
+- New layouter method (see below)
 - Compose should allow filesystem objects to be passed on the command line
-  and store them itself (should be able to steal directory serialization from ccouch3)
+  and store them itself (should be able to steal directory serialization code from ccouch3)
 - Include a utility for recursively scanning emitted HTML files for URNs
   and writing them all to STDOUT.
 
-== New gridification method ==
+== New layouter ==
 
 For a given set of images with weights (these weights can
 be assigned arbitrarily), create a single row.
@@ -23,6 +25,7 @@ Repeat the 2 steps but making columns instead of rows.
 
 = Done =
 
+* Allow selection of layout from command-line
 * Break program into smaller parts that can be run separately.
   (compose can accept directories or compound image files and
   can emit compound images, raster images, or HTML)

@@ -15,11 +15,10 @@ import togos.picgrid.file.FileUtil
 import java.io.FileWriter
 import togos.picgrid.image.ImageInfoExtractor
 import togos.picgrid.image.ImageMagickCropResizer
-import togos.picgrid.layout.BorceLayouter
+import togos.picgrid.layout.Layouter
 import togos.picgrid.Gridifier
 import togos.picgrid.CompoundImageRasterizer
 import togos.picgrid.CompoundImageHTMLizer
-import togos.picgrid.image.ImageMagickFallback
 import togos.picgrid.image.ImageMagickFallbackSource
 
 object ComposeCommand
@@ -40,6 +39,7 @@ object ComposeCommand
 		"Target is the URN of a directory or compound image to render.\n" +
 		"Options:\n" +
 		"  -v ; be verbose\n" +
+		"  -layouter <name>:<w>x<h> ; specify layout algorithm and maximum size\n" +
 		"  -convert-path <exe> ; path to convert.exe\n" +
 		"  -function-cache-dir <dir> ; dir to store function results in\n" +
 		"  -datastore <dir> ; dir to store output data in\n" +
@@ -52,7 +52,12 @@ object ComposeCommand
 		"  -from-compound-image ; force to treat source as a compound image.\n" +
 		"  -to-compound-image   ; final output is a compound image.\n" +
 		"  -to-raster-image     ; final output is a raster image.\n" +
-		"  -to-html             ; final output is an HTML page.\n"
+		"  -to-html             ; final output is an HTML page.\n" +
+		"\n" +
+		"Layout algorithms:\n" +
+		"  borce   ; recursively subdivides the image list both horizontally\n" +
+		"          ; and vertically\n" +
+		"  rowly   ; divides the list into rows naievely\n" 
 	
 	def main( cmdName:String, args:Array[String] ) {
 		var datastoreDir:String = null
@@ -64,10 +69,14 @@ object ComposeCommand
 		var refStoragePath:String = null
 		var sourceType:String = null
 		var targetType:String = "html"
+		var layouterName:String = "borce:1280x800"
 		while( i < args.length ) {
 			args(i) match {
 				case "-v" =>
 					verbose = true
+				case "-layouter" =>
+					i += 1
+					layouterName = args(i)
 				case "-convert-path" =>
 					i += 1
 					ImageMagickCommands.convertPath = args(i)
@@ -170,11 +179,12 @@ object ComposeCommand
 		
 		val imageInfoExtractor = new ImageInfoExtractor( getCache(functionCacheDir, "image-dimensions"), datastore )
 		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert, new ImageMagickFallbackSource(datastore, ImageMagickCommands.convert) )
-		val gridificationMethod = new BorceLayouter( 1280, 800 )
-		val gridifier = new Gridifier( getCache(functionCacheDir, "gridification"), datastore, imageInfoExtractor, gridificationMethod )
 		
 		val compoundImageUri = sourceType match {
 		case "directory" =>
+			val layouter = Layouter.fromString(layouterName)
+			val gridifier = new Gridifier( getCache(functionCacheDir, "gridification"), datastore, imageInfoExtractor, layouter )
+			
 			val centry = gridifier.gridifyDir( sourceUri, null )
 			if( centry == null ) {
 				System.err.println("No images found!")
