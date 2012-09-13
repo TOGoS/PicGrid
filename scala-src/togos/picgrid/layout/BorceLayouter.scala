@@ -116,9 +116,10 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 	def fitness2( ct:CellTree ):Float = {
 		val l = ct.subTrees.length
 		val totalWeight = ct.weight
-		val expectedSubWeight = ct.weight / l
+		val expectedSubWeight = totalWeight / l
 		var fit = 0f
 		for( t <- ct.subTrees ) {
+			// If it takes up 1/3 of the tree, we'd like it to have 1/3 of the weight:
 			fit -= ratio(expectedSubWeight, t.weight) / l
 			fit += fitness(t) / l
 		}

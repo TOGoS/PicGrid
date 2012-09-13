@@ -55,9 +55,11 @@ object ComposeCommand
 		"  -to-html             ; final output is an HTML page.\n" +
 		"\n" +
 		"Layout algorithms:\n" +
-		"  borce   ; recursively subdivides the image list both horizontally\n" +
-		"          ; and vertically\n" +
-		"  rowly   ; divides the list into rows naievely\n" 
+		"  borce    ; recursively subdivides the image list both horizontally\n" +
+		"           ; and vertically.\n" +
+		"  rowly    ; divides the list into rows naievely.\n" +
+		"  multifit ; uses multiple algorithms and tries to pick the most\n" +
+		"           ; plesant output."
 	
 	def main( cmdName:String, args:Array[String] ) {
 		var datastoreDir:String = null
@@ -131,6 +133,8 @@ object ComposeCommand
 		}
 		
 		if( sourceType == null ) {
+			// TODO: allow file paths
+			// TODO: determine type by actually looking at data or object
 			if( sourceUri.startsWith("rdf-subject:") || sourceUri.startsWith("x-rdf-subject:") || sourceUri.startsWith("x-parse-rdf:") ) {
 				sourceType = "directory"
 			} else {

@@ -32,6 +32,10 @@ object Layouter
 		return parts(0) match {
 			case "rowly" => new RowlyLayouter()
 			case "borce" => new BorceLayouter(w,h)
+			case "multifit" => new MultiFitLayouter( List(
+				new RowlyLayouter(),
+				new BorceLayouter(w,h)
+			) )
 			case _ => throw new Exception("Unrecognised layouter: '"+parts(0)+"'")
 		}
 	}
