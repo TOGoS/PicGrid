@@ -71,7 +71,7 @@ object ComposeCommand
 		var refStoragePath:String = null
 		var sourceType:String = null
 		var targetType:String = "html"
-		var layouterName:String = "borce:1280x800"
+		var layouterName:String = "multifit:1280x800"
 		while( i < args.length ) {
 			args(i) match {
 				case "-v" =>

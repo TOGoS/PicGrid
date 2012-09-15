@@ -27,6 +27,9 @@ class MultiFitLayouter( val subLayouters:Seq[Layouter] ) extends Layouter
 	
 	def ratio( x:Float, y:Float ) = if(x > y) x/y else y/x
 	
+	// TODO: Take weight / size ratio into account
+	// (will be easier when CICs are replaced with LayoutCells)
+	
 	def fitness( cs:Seq[CompoundImageComponent] ):Float = {
 		// -1 for more than 12x variation in area
 		// -1 for ratio more diff than 2:1

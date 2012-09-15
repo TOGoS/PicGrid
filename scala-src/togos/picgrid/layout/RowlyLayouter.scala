@@ -5,11 +5,11 @@ import togos.picgrid.ImageEntry
 import scala.collection.mutable.ListBuffer
 import togos.picgrid.image.CompoundImageComponent
 
-class RowlyLayouter extends Layouter
+class RowlyLayouter( w:Int, h:Int ) extends AutoSpacingLayouter(w,h)
 {
-	def cacheString = "rowly-v1"
+	def cacheString = "rowly-v2"
 	
-	def gridifyRows( images:Seq[ImageEntry], imagesPerRow:Int ):List[CompoundImageComponent] = {
+	def gridifyRows( images:Seq[ImageEntry], imagesPerRow:Int ):List[LayoutCell] = {
 		var rows = ListBuffer[List[ImageEntry]]()
 		var row = ListBuffer[ImageEntry]()
 		for( i <- images ) {
@@ -21,13 +21,12 @@ class RowlyLayouter extends Layouter
 		}
 		if( row.length > 0 ) rows += row.toList
 		
-		val components = ListBuffer[CompoundImageComponent]()
+		val cells = ListBuffer[LayoutCell]()
 		var totalWidth = 1024
 		var totalImageCount = 0
-		var spacing = 4
-		var y = 0
+		var y = 0f
 		for( row <- rows ) {
-			var imageSpaceAvailable = totalWidth - (row.length - 1) * spacing
+			var imageSpaceAvailable = totalWidth
 			var imageWidthRatio = 0f // sum(w/h)
 			for( e <- row ) {
 				val i = e.info
@@ -38,17 +37,17 @@ class RowlyLayouter extends Layouter
 			for( e <- row ) {
 				val i = e.info
 				val cellWidth = i.width * rowHeight / i.height
-				components += new CompoundImageComponent( x.toInt, y, cellWidth.toInt, rowHeight.toInt, i.uri, e.name )
-				x += cellWidth + spacing
+				cells += new LayoutCell( e, x, y, cellWidth, rowHeight )
+				x += cellWidth
 				totalImageCount += i.totalImageCount
 			}
-			y += rowHeight.toInt + spacing
+			y += rowHeight
 		}
 		
-		components.toList
+		cells.toList
 	}
 	
-	def gridifyColumns( images:Seq[ImageEntry], imagesPerColumn:Int ):List[CompoundImageComponent] = {
+	def gridifyColumns( images:Seq[ImageEntry], imagesPerColumn:Int ):List[LayoutCell] = {
 		var columns = ListBuffer[List[ImageEntry]]()
 		var column = ListBuffer[ImageEntry]()
 		for( i <- images ) {
@@ -60,13 +59,12 @@ class RowlyLayouter extends Layouter
 		}
 		if( column.length > 0 ) columns += column.toList
 		
-		val components = ListBuffer[CompoundImageComponent]()
+		val cells = ListBuffer[LayoutCell]()
 		var totalHeight = 1024
 		var totalImageCount = 0
-		var spacing = 4
-		var x = 0
+		var x = 0f
 		for( column <- columns ) {
-			var imageSpaceAvailable = totalHeight - (column.length - 1) * spacing
+			var imageSpaceAvailable = totalHeight - (column.length - 1)
 			var imageHeightRatio = 0f // sum(h/w)
 			for( e <- column ) {
 				val i = e.info
@@ -77,23 +75,23 @@ class RowlyLayouter extends Layouter
 			for( e <- column ) {
 				val i = e.info
 				val cellHeight = i.height * rowWidth / i.width
-				components += new CompoundImageComponent( x, y.toInt, rowWidth.toInt, cellHeight.toInt, i.uri, e.name )
-				y += cellHeight + spacing
+				cells += new LayoutCell( e, x, y, rowWidth, cellHeight )
+				y += cellHeight
 				totalImageCount += i.totalImageCount
 			}
-			x += rowWidth.toInt + spacing
+			x += rowWidth
 		}
 		
-		components.toList
+		cells.toList
 	}
 	
-	def aspectRatio( components:Seq[CompoundImageComponent] ):Double = {
-		var width, height = 0
-		for( c <- components ) {
-			if( c.x + c.width  > width  ) width  = c.x + c.width
-			if( c.y + c.height > height ) height = c.y + c.height
+	def aspectRatio( cells:Seq[LayoutCell] ):Float = {
+		var width, height = 0f
+		for( c <- cells ) {
+			if( c.x + c.w  > width  ) width  = c.x + c.w
+			if( c.y + c.h > height  ) height = c.y + c.h
 		}
-		width.toDouble / height
+		width / height
 	}
 	
 	val aspectRatioPower = 2
@@ -101,8 +99,8 @@ class RowlyLayouter extends Layouter
 	val componentAreaRatioPower = 2
 	val componentAreaRatioWeight = 1
 	
-	def aspectRatioFitness( components:Seq[CompoundImageComponent] ):Double = {
-		val ar = aspectRatio( components )
+	def aspectRatioFitness( cells:Seq[LayoutCell] ):Double = {
+		val ar = aspectRatio( cells )
 		var dist = 1.2 / ar;
 		if( dist < 1 ) dist = 1 / dist
 		- math.pow( dist, aspectRatioPower ) * aspectRatioWeight
@@ -116,24 +114,24 @@ class RowlyLayouter extends Layouter
 		*/
 	}
 	
-	def componentAreaRatioFitness( components:Seq[CompoundImageComponent] ):Double = {
-		var smallestArea = Integer.MAX_VALUE
-		var largestArea = 0
-		for( c <- components ) {
-			val area = c.width * c.height
+	def componentAreaRatioFitness( cells:Seq[LayoutCell] ):Double = {
+		var smallestArea = Float.MaxValue
+		var largestArea = Float.MinValue
+		for( c <- cells ) {
+			val area = c.w * c.h
 			if( area < smallestArea ) smallestArea = area
 			if( area > largestArea ) largestArea = area
 		}
 		- math.pow( largestArea.toDouble / smallestArea, componentAreaRatioPower ) * componentAreaRatioWeight
 	}
 	
-	def fitness( components:Seq[CompoundImageComponent] ):Double = {
-		aspectRatioFitness( components ) + componentAreaRatioFitness( components )
+	def fitness( cells:Seq[LayoutCell] ):Double = {
+		aspectRatioFitness( cells ) + componentAreaRatioFitness( cells )
 	}
 	
-	def gridify( images:Seq[ImageEntry] ):List[CompoundImageComponent] = {
+	def _gridify( images:Seq[ImageEntry] ):List[LayoutCell] = {
 		var bestFitness = Double.NegativeInfinity
-		var bestResult:List[CompoundImageComponent] = null
+		var bestResult:List[LayoutCell] = null
 		var numRows = math.sqrt(images.length).toInt - 3
 		if( numRows < 1 ) numRows = 1
 		var i = 0

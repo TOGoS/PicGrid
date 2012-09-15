@@ -68,8 +68,8 @@ abstract class AutoSpacingLayouter( val maxWidth:Int, val maxHeight:Int ) extend
 		val spacedSX = (outWidth +spacing)/(inWidth )
 		val spacedSY = (outHeight+spacing)/(inHeight)
 		
-		System.err.println( "%f, %f to %f, %f ; target = %f, %f".format(minX,minY,maxX,maxY,outWidth,outHeight) )
-		System.err.println( "x * %f + %f ; y * %f + %f".format(spacedSX,spacedDX,spacedSY,spacedDY) )
+		//System.err.println( "%f, %f to %f, %f ; target = %f, %f".format(minX,minY,maxX,maxY,outWidth,outHeight) )
+		//System.err.println( "x * %f + %f ; y * %f + %f".format(spacedSX,spacedDX,spacedSY,spacedDY) )
 		
 		return for( c <- cells ) yield new LayoutCell(
 			c.entry,
@@ -128,10 +128,10 @@ object Layouter
 		val (w,h) = if( parts.size >= 2 ) parseDims(parts(1)) else DEFAULT_DIMS 
 		
 		return parts(0) match {
-			case "rowly" => new RowlyLayouter()
+			case "rowly" => new RowlyLayouter(w,h)
 			case "borce" => new BorceLayouter(w,h)
 			case "multifit" => new MultiFitLayouter( List(
-				new RowlyLayouter(),
+				new RowlyLayouter(w,h),
 				new BorceLayouter(w,h)
 			) )
 			case _ => throw new Exception("Unrecognised layouter: '"+parts(0)+"'")
