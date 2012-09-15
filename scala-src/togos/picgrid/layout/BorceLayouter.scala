@@ -5,13 +5,12 @@ import togos.picgrid.ImageEntry
 import scala.collection.mutable.ListBuffer
 import togos.picgrid.image.CompoundImageComponent
 
-class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
+class BorceLayouter(maxWidth:Int, maxHeight:Int) extends AutoSpacingLayouter( maxWidth, maxHeight )
 {
-	def cacheString = "borce-v1-%dx%d".format(maxWidth,maxHeight)
+	def cacheString = "borce-v3-%dx%d".format(maxWidth,maxHeight)
 	
-	class ImageInfo( val w:Int, val h:Int, val weight:Float, val urn:String, val name:String )
-	class CellTree( val subTrees:Seq[CellTree], val image:ImageInfo, val weight:Float ) {
-		def this( image:ImageInfo ) = this( List.empty, image, image.weight )
+	class CellTree( val subTrees:Seq[CellTree], val entry:ImageEntry, val weight:Float ) {
+		def this( entry:ImageEntry ) = this( List.empty, entry, entry.info.totalByteCount )
 		def this( subTrees:Seq[CellTree] ) = this(subTrees, null, subTrees.map(_.weight).sum)
 	}
 	
@@ -36,12 +35,12 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 			)
 		}
 		
-		def findSplitPoint( images:Seq[ImageInfo], totalWeight:Float ):Int = {
+		def findSplitPoint( images:Seq[ImageEntry], totalWeight:Float ):Int = {
 			var midWeightIndex = 0
 			var prevWeight, nextWeight = 0f
 			val target = totalWeight / 2
 			while( midWeightIndex < images.size ) {
-				nextWeight = prevWeight + weightFunction(images(midWeightIndex).weight)
+				nextWeight = prevWeight + weightFunction(images(midWeightIndex).info.totalByteCount)
 				if( target - prevWeight < nextWeight - target ) {
 					return midWeightIndex
 				}
@@ -49,13 +48,13 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 				midWeightIndex += 1
 			}
 			
-			assert( midWeightIndex > 0, "Somehow mid-weight index is > 0; totalWeight = "+totalWeight+", weights = "+images.map(i => i.weight) )
-			assert( midWeightIndex < images.length, "Somehow mid-weight index is at end; totalWeight = "+totalWeight+", weights = "+images.map(i => i.weight) )
+			assert( midWeightIndex > 0, "Somehow mid-weight index is > 0; totalWeight = "+totalWeight+", weights = "+images.map(i => i.info.totalByteCount) )
+			assert( midWeightIndex < images.length, "Somehow mid-weight index is at end; totalWeight = "+totalWeight+", weights = "+images.map(i => i.info.totalByteCount) )
 			
 			return midWeightIndex
 		}
 		
-		def partition( images:Seq[ImageInfo] ):CellTree = {
+		def partition( images:Seq[ImageEntry] ):CellTree = {
 			if( images.size == 0 ) {
 				throw new Exception("Image list is empty!  Can't build CellTree from it.")
 			} else if( images.size == 1 ) {
@@ -66,7 +65,7 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 			
 			var totalWeight = 0f
 			for( image <- images ) {
-				totalWeight += weightFunction(image.weight)
+				totalWeight += weightFunction(image.info.totalByteCount)
 			}
 			
 			val midWeightIndex = math.round( (weightWeight * (images.length / 2f) + countWeight * findSplitPoint(images, totalWeight)) / (weightWeight + countWeight) )
@@ -96,7 +95,7 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 	)
 	
 	def minDepth( ct:CellTree ):Int = {
-		if( ct.image != null ) return 0
+		if( ct.entry != null ) return 0
 		
 		var min = Int.MaxValue
 		for( s <- ct.subTrees ) {
@@ -128,7 +127,7 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 	
 	def fitness( ct:CellTree ):Float = fitness2(ct)/2 - maxDepth(ct)
 	
-	def partition( images:Seq[ImageInfo] ):CellTree = {
+	def partition( images:Seq[ImageEntry] ):CellTree = {
 		var minFit = Float.MaxValue
 		var maxFit = Float.MinValue
 		var mostFit:CellTree = null
@@ -149,9 +148,9 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 	}
 	
 	class LayoutComponent( val x:Int,val y:Int,val w:Int, val h:Int, val l:Layout )
-	class Layout( val w:Int, val h:Int, val components:Seq[LayoutComponent], val image:ImageInfo ) {
+	class Layout( val w:Int, val h:Int, val components:Seq[LayoutComponent], val entry:ImageEntry ) {
 		def this( w:Int, h:Int, components:Seq[LayoutComponent] ) = this(w,h,components,null)
-		def this( w:Int, h:Int, image:ImageInfo ) = this(w,h,List.empty,image)
+		def this( w:Int, h:Int, entry:ImageEntry ) = this(w,h,List.empty,entry)
 	}
 	
 	def swap( x:Int, y:Int, really:Boolean ):(Int,Int) = if( really ) (x,y) else (y,x)
@@ -184,7 +183,7 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 	def ratio( x:Float, y:Float ):Float = if(x>y) x / y else y / x
 	
 	def layout( ct:CellTree ):Layout = {
-		if( ct.image != null ) return new Layout(ct.image.w, ct.image.h, ct.image)
+		if( ct.entry != null ) return new Layout(ct.entry.info.width, ct.entry.info.height, ct.entry)
 		
 		var subLayouts = List[Layout]()
 		var maxWidth, maxHeight = 0
@@ -203,16 +202,9 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 		if( ratio(h.w,h.h) < ratio(v.w,v.h) ) h else v
 	}
 	
-	def roundBounds( x:Float, y:Float, w:Float, h:Float ):(Int,Int,Int,Int) = {
-		val endX = math.round(x+w); val endY = math.round(y+h)
-		val beginX = math.round(x); val beginY = math.round(y);
-		return (beginX,beginY,endX-beginX,endY-beginY)
-	}
-	
-	def layoutToCells( l:Layout, x:Float, y:Float, w:Float, h:Float, cellDest:(CompoundImageComponent => Unit) ) {
-		if( l.image != null ) {
-			val (cx,cy,cw,ch) = roundBounds(x,y,w,h)
-			cellDest( new CompoundImageComponent(cx, cy, cw, ch, l.image.urn, l.image.name) )
+	def layoutToCells( l:Layout, x:Float, y:Float, w:Float, h:Float, cellDest:(LayoutCell => Unit) ) {
+		if( l.entry != null ) {
+			cellDest( new LayoutCell( l.entry, x, y, w, h ) )
 		} else {
 			val scaleX = w / l.w; val scaleY = h / l.h
 			for( lc <- l.components ) {
@@ -224,69 +216,14 @@ class BorceLayouter(val maxWidth:Int, val maxHeight:Int) extends Layouter
 		}
 	}
 	
-	def layoutToCells( l:Layout, x:Float, y:Float, w:Float, h:Float ):List[CompoundImageComponent] = {
-		var list = List[CompoundImageComponent]()
+	def layoutToCells( l:Layout, x:Float, y:Float, w:Float, h:Float ):List[LayoutCell] = {
+		var list = List[LayoutCell]()
 		layoutToCells(l,x,y,w,h, (i => list = i :: list ) )
 		list
 	}
 	
-	def fitInside( w:Float, h:Float, maxWidth:Float, maxHeight:Float ):(Float,Float) = {
-		if( w <= maxWidth && h <= maxHeight ) return (w,h)
-		val ratio = math.min( maxWidth / w, maxHeight / h )
-		return (w * ratio, h * ratio)
+	def _gridify( entries:Seq[ImageEntry] ) = {
+		val l = layout( partition( entries ) )
+		layoutToCells( l, 0, 0, l.w, l.h )
 	}
-	
-	def imageEntriesToInfo( entries:Seq[ImageEntry] ):Seq[ImageInfo] = {
-		for( e <- entries ) yield new ImageInfo( e.info.width, e.info.height, e.info.totalByteCount, e.info.uri, e.name )
-	}
-	
-	/**
-	 * Shrinks the component by s pixels on each side.
-	 */
-	def bordify( c:CompoundImageComponent, s1:Int, s2:Int ) =
-		new CompoundImageComponent( c.x + s1, c.y + s1, c.width - s1 - s2, c.height - s1 - s2, c.uri, c.name )
-	
-	def gridify( entries:Seq[ImageEntry], maxWidth:Int, maxHeight:Int ):List[CompoundImageComponent] = {
-		val l = layout( partition( imageEntriesToInfo(entries) ) )
-		val (w,h) = fitInside( l.w, l.h, maxWidth, maxHeight )
-		
-		val rawCells = layoutToCells( l, 0, 0, w, h )
-		var minSize:Int = Int.MaxValue
-		for( c <- rawCells ) {
-			minSize = math.min( minSize, math.min(c.height, c.width) )
-		}
-		
-		val spacing:Int =
-			if(       minSize >= 13 )
-				4
-			else if( minSize >= 9 )
-				3
-			else if( minSize >= 6 )
-				2
-			else if( minSize >= 4 )
-				1
-			else
-				0
-		
-		val spacing1:Int = math.floor(spacing/2f).toInt
-		val spacing2:Int = math.ceil( spacing/2f).toInt
-		
-		var cells = List[CompoundImageComponent]()
-		layoutToCells( l, -spacing1, -spacing1, w+spacing1+spacing2, h+spacing1+spacing2,
-			(c:CompoundImageComponent) => cells = bordify(c,spacing1,spacing2) :: cells
-		)
-		
-		// Sanity checks
-		for( c <- cells ) {
-			assert( c.width > 0                , "Cell width is <= 0: "+c )
-			assert( c.height > 0               , "Cell height is <= 0: "+c )
-			assert( c.x >= 0                   , "Cell X pos is < 0: "+c )
-			assert( c.y >= 0                   , "Cell Y pos is < 0: "+c )
-			assert( c.x + c.width  <= maxWidth , "Cell X+width is > "+maxWidth+": "+c )
-			assert( c.y + c.height <= maxHeight, "Cell Y+height is > "+maxHeight+": "+c )
-		}
-		return cells
-	}
-	
-	def gridify( images:Seq[ImageEntry] ) = gridify(images, maxWidth, maxHeight)
 }

@@ -2,6 +2,9 @@ package togos.picgrid.layout
 
 import togos.picgrid.ImageEntry
 import togos.picgrid.image.CompoundImageComponent
+import togos.picgrid.ImageInfo
+
+class LayoutCell( val entry:ImageEntry, val x:Float, val y:Float, val w:Float, val h:Float )
 
 trait Layouter
 {
@@ -13,6 +16,101 @@ trait Layouter
 	def cacheString:String
 	def gridify( images:Seq[ImageEntry] ):Seq[CompoundImageComponent]
 }
+
+abstract class AutoSpacingLayouter( val maxWidth:Int, val maxHeight:Int ) extends Layouter
+{
+	def _gridify( images:Seq[ImageEntry] ):Seq[LayoutCell]
+	
+	/**
+	 * Squishes them into the allowed area and adds space
+	 * between cells.
+	 */
+	def squish( cells:Seq[LayoutCell] ):Seq[LayoutCell] = {
+		if( cells.size == 0 ) return List()
+		
+		var minX, minY = Float.MaxValue
+		var maxX, maxY = Float.MinValue
+		for( c <- cells ) {
+			if( c.x < minX ) minX = c.x
+			if( c.y < minY ) minY = c.y
+			if( c.x + c.w > maxX ) maxX = c.x + c.w
+			if( c.y + c.h > maxY ) maxY = c.y + c.h
+		}
+		
+		val inWidth  = maxX - minX
+		val inHeight = maxY - minY
+		
+		var scale = 1f
+		if( scale * inWidth  > maxWidth  ) scale = maxWidth  / inWidth
+		if( scale * inHeight > maxHeight ) scale = maxHeight / inHeight
+		val outWidth  = inWidth  * scale
+		val outHeight = inHeight * scale
+		
+		var minSize = Float.MaxValue
+		for( c <- cells ) {
+			minSize = math.min( minSize, scale*math.min(c.w, c.h) )
+		}
+		
+		val spacing:Int =
+			if(       minSize >= 13 )
+				4
+			else if( minSize >= 9 )
+				3
+			else if( minSize >= 6 )
+				2
+			else if( minSize >= 4 )
+				1
+			else
+				0
+		
+		val spacedDX = 0 - minX
+		val spacedDY = 0 - minY
+		val spacedSX = (outWidth +spacing)/(inWidth )
+		val spacedSY = (outHeight+spacing)/(inHeight)
+		
+		System.err.println( "%f, %f to %f, %f ; target = %f, %f".format(minX,minY,maxX,maxY,outWidth,outHeight) )
+		System.err.println( "x * %f + %f ; y * %f + %f".format(spacedSX,spacedDX,spacedSY,spacedDY) )
+		
+		return for( c <- cells ) yield new LayoutCell(
+			c.entry,
+			(c.x-minX) * spacedSX + spacedDX,
+			(c.y-minY) * spacedSY + spacedDY,
+			c.w * spacedSX - spacing,
+			c.h * spacedSY - spacing
+		)
+	}
+	
+	def quantize( c:LayoutCell ):LayoutCell = new LayoutCell(
+		c.entry,
+		math.round(c.x), math.round(c.y),
+		math.round(c.w + c.x) - math.round(c.x),
+		math.round(c.h + c.y) - math.round(c.y)
+	)
+	
+	def quantize( cells:Seq[LayoutCell] ):Seq[LayoutCell] = for( c <- cells ) yield quantize(c)
+	
+	// TODO: Change to return LayoutCells (or something else that contains all ImageEntry info),
+	// instead of CompoundImageComponents, which do not
+	def gridify( images:Seq[ImageEntry] ):Seq[CompoundImageComponent] = {
+		val cells = for( c <- quantize(squish(_gridify( images ))) ) yield new CompoundImageComponent(
+			c.x.toInt, c.y.toInt, c.w.toInt, c.h.toInt,
+			c.entry.info.uri, c.entry.name
+		)
+		
+		// Sanity checks
+		for( c <- cells ) {
+			assert( c.width > 0                , "Cell width is <= 0: "+c )
+			assert( c.height > 0               , "Cell height is <= 0: "+c )
+			assert( c.x >= 0                   , "Cell X pos is < 0: "+c )
+			assert( c.y >= 0                   , "Cell Y pos is < 0: "+c )
+			assert( c.x + c.width  <= maxWidth , "Cell X+width is > "+maxWidth+": "+c )
+			assert( c.y + c.height <= maxHeight, "Cell Y+height is > "+maxHeight+": "+c )
+		}
+		
+		return cells
+	}
+}
+
 object Layouter
 {
 	val DEFAULT_DIMS = (1280,800)
