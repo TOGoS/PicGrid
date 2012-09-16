@@ -1,9 +1,7 @@
 package togos.picgrid
 
 import java.security.MessageDigest
-
 import org.bitpedia.util.Base32
-
 import togos.blob.ByteChunk
 import togos.picgrid.BlobConversions.byteBlobAsByteChunk
 import togos.picgrid.BlobConversions.byteBlobAsString
@@ -14,12 +12,13 @@ import togos.picgrid.BlobConversions.stringAsByteChunk
 import togos.picgrid.image.CompoundImage
 import togos.picgrid.image.ImageInfoExtractor
 import togos.picgrid.layout.Layouter
+import togos.picgrid.image.CompoundImageComponent
 
 class Gridifier(
 	val functionCache:FunctionCache,
 	val datastore:BlobAutoStore,
 	val infoExtractor:ImageInfoExtractor,
-	val gridificationMethod:Layouter
+	val layouter:Layouter
 ) {
 	val xRdfSubjectRegex = """x-rdf-subject:(.*)""".r
 	val imageFilenameRegex = """(?i).*\.(?:png|jpe?g|gif|bmp)$""".r
@@ -55,7 +54,11 @@ class Gridifier(
 		if( images.length == 0 ) return null
 		if( images.length == 1 ) return images.head
 		
-		val components = gridificationMethod.gridify( images )
+		val layout = layouter.layout( images )
+		val components = for( c <- layout.cells ) yield new CompoundImageComponent(
+			c.x.toInt, c.y.toInt, c.w.toInt, c.h.toInt,
+			c.entry.info.uri, c.entry.name
+		)
 		
 		var totalImageCount = 0
 		var totalByteCount  = 0l
@@ -70,7 +73,7 @@ class Gridifier(
 			if( c.y + c.height > height ) height = c.y + c.height
 		}
 		
-		val ci = new CompoundImage( width, height, components, null, null, generatedFromUri, totalImageCount, totalByteCount )
+		val ci = new CompoundImage( width, height, components, null, null, generatedFromUri, totalImageCount, totalByteCount, layout.layouter.cacheString )
 		
 		val uri = datastore.store( ci.serialize() )
 		new ImageEntry( name, new ImageInfo( uri, generatedFromUri, ci.width, ci.height, ci.totalImageCount, ci.totalByteCount ) )
@@ -87,7 +90,7 @@ class Gridifier(
 		Base32.encode(sha1Hash)
 	}
 	
-	lazy val configHash = gridificationMethod.cacheString
+	lazy val configHash = layouter.cacheString
 	
 	def gridifyDir( uri:String, name:String ):ImageEntry = {
 		val cacheKey = configHash+":"+uri

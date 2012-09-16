@@ -1,6 +1,7 @@
 package togos.picgrid
 
 import java.io.File
+
 import java.io.FileNotFoundException
 import java.lang.Integer
 
@@ -12,6 +13,7 @@ import togos.picgrid.file.FileBlob
 import togos.picgrid.image.CompoundImage
 import togos.picgrid.image.ImageFormat
 import togos.picgrid.image.ImageInfoExtractor
+import togos.picgrid.image.ImageResizer
 
 class CompoundImageRasterizer(
 	val functionCache:FunctionCache,

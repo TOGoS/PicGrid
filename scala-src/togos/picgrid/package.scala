@@ -22,10 +22,6 @@ package object picgrid
 		def unapply[Encoded]( i:Encoded ):Option[Decoded]
 	}
 	
-	type ImageResizer = {
-		def resize( origUri:String, boxWidth:Int, boxHeight:Int ):String
-	}
-	
 	type FunctionCache = Store[ByteChunk,ByteChunk]
 	type BlobSource    = Function[String,ByteBlob]
 	type BlobAutoStore = AutoStore[String,ByteBlob]

@@ -6,6 +6,8 @@ import togos.picgrid.ImageInfo
 
 class LayoutCell( val entry:ImageEntry, val x:Float, val y:Float, val w:Float, val h:Float )
 
+class Layout( val layouter:Layouter, val cells:Seq[LayoutCell] )
+
 trait Layouter
 {
 	/**
@@ -14,7 +16,7 @@ trait Layouter
 	 * e.g. bob-v5-640x480  
 	 */
 	def cacheString:String
-	def gridify( images:Seq[ImageEntry] ):Seq[CompoundImageComponent]
+	def layout( images:Seq[ImageEntry] ):Layout
 }
 
 abstract class AutoSpacingLayouter( val maxWidth:Int, val maxHeight:Int ) extends Layouter
@@ -89,25 +91,20 @@ abstract class AutoSpacingLayouter( val maxWidth:Int, val maxHeight:Int ) extend
 	
 	def quantize( cells:Seq[LayoutCell] ):Seq[LayoutCell] = for( c <- cells ) yield quantize(c)
 	
-	// TODO: Change to return LayoutCells (or something else that contains all ImageEntry info),
-	// instead of CompoundImageComponents, which do not
-	def gridify( images:Seq[ImageEntry] ):Seq[CompoundImageComponent] = {
-		val cells = for( c <- quantize(squish(_gridify( images ))) ) yield new CompoundImageComponent(
-			c.x.toInt, c.y.toInt, c.w.toInt, c.h.toInt,
-			c.entry.info.uri, c.entry.name
-		)
+	def layout( images:Seq[ImageEntry] ):Layout = {
+		val cells = quantize(squish(_gridify( images )))
 		
 		// Sanity checks
 		for( c <- cells ) {
-			assert( c.width > 0                , "Cell width is <= 0: "+c )
-			assert( c.height > 0               , "Cell height is <= 0: "+c )
-			assert( c.x >= 0                   , "Cell X pos is < 0: "+c )
-			assert( c.y >= 0                   , "Cell Y pos is < 0: "+c )
-			assert( c.x + c.width  <= maxWidth , "Cell X+width is > "+maxWidth+": "+c )
-			assert( c.y + c.height <= maxHeight, "Cell Y+height is > "+maxHeight+": "+c )
+			assert( c.w > 0               , "Cell width is <= 0: "+c )
+			assert( c.h > 0               , "Cell height is <= 0: "+c )
+			assert( c.x >= 0              , "Cell X pos is < 0: "+c )
+			assert( c.y >= 0              , "Cell Y pos is < 0: "+c )
+			assert( c.x + c.w <= maxWidth , "Cell X+width is > "+maxWidth+": "+c )
+			assert( c.y + c.h <= maxHeight, "Cell Y+height is > "+maxHeight+": "+c )
 		}
 		
-		return cells
+		return new Layout( this, cells )
 	}
 }
 

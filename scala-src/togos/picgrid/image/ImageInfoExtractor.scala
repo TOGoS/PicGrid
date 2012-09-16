@@ -80,7 +80,7 @@ import togos.picgrid.image.ImageInfoExtractor._
 
 class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:BlobSource )
 {
-	var dimensionCache = new Function[String,(Int,Int)] {
+	val dimensionCache = new Function[String,(Int,Int)] {
 		def apply( uri:String ):(Int,Int) = {
 			val str = imageDimensionCache( uri ):String
 			if( str == null ) return null

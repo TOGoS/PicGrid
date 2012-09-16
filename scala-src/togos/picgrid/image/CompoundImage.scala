@@ -1,6 +1,7 @@
 package togos.picgrid.image
 
 import java.io.BufferedReader
+
 import java.io.InputStreamReader
 import java.lang.Integer
 
@@ -28,7 +29,8 @@ class CompoundImage(
 	val promotedImage2Uri:String,
 	val generatedFromUri:String,
 	val totalImageCount:Int,
-	val totalByteCount:Long
+	val totalByteCount:Long,
+	val generatorInfo:String
 ) {
 	def aspectRatio = width.toFloat / height
 	
@@ -44,19 +46,22 @@ class CompoundImage(
 		for( c <- components ) {
 			sb.append("COMPONENT "+c+"\n")
 		}
-		if( generatedFromUri != null ) {
-			sb.append("GENERATED-FROM "+generatedFromUri+"\n")
-		}
 		if( totalImageCount != -1 ) {
 			sb.append("TOTAL-IMAGE-COUNT "+totalImageCount+"\n")
 		}
 		if( totalByteCount != -1 ) {
-			sb.append("TOTAL-BYTE-COUNT "+totalImageCount+"\n")
+			sb.append("TOTAL-BYTE-COUNT "+totalByteCount+"\n")
+		}
+		if( generatedFromUri != null ) {
+			sb.append("GENERATED-FROM "+generatedFromUri+"\n")
+		}
+		if( generatorInfo != null ) {
+			sb.append("GENERATOR-INFO '"+StringEscape(generatorInfo)+"'\n")
 		}
 		sb.toString()
 	}
 	
-	def withoutMetadata = new CompoundImage( width, height, components, null, null, null, -1, -1 )
+	def withoutMetadata = new CompoundImage( width, height, components, null, null, null, -1, -1, null )
 	
 	lazy val graphicUrn = "urn:sha1:"+DigestUtil.sha1Base32(withoutMetadata.serialize())
 }
@@ -69,6 +74,8 @@ object CompoundImage
 	val COUNT_LINE     = """^TOTAL-IMAGE-COUNT (\d+)$""".r
 	val SIZE_LINE      = """^TOTAL-BYTE-COUNT (\d+)$""".r
 	val SOURCE_LINE    = """^GENERATED-FROM (\S+)$""".r
+	val GENERATOR_LINE = """^GENERATOR-INFO '((?:[^'\\]|\\.)*)'$""".r
+	val OTHER_GENERATOR_LINE = """^GENERATOR-INFO (\S+)$""".r
 	
 	def unserialize( b:ByteBlob ):CompoundImage = {
 		val br = new BufferedReader( new InputStreamReader( new ByteBlobInputStream(b.chunkIterator()) ) )
@@ -79,6 +86,7 @@ object CompoundImage
 		var totalImageCount = -1
 		var totalByteCount  = -1l
 		var generatedFromUri:String = null
+		var generatorInfo:String = null
 		while( line != null ) {
 			line match {
 				case CI_LINE(w,h) =>
@@ -88,18 +96,24 @@ object CompoundImage
 					totalImageCount = c.toInt
 				case SIZE_LINE(c) =>
 					totalByteCount = c.toLong
-				case SOURCE_LINE(c) =>
-					generatedFromUri = c
 				case PROMOTE1_LINE(uri) =>
 					promotedImage1Uri = uri
 				case PROMOTE2_LINE(uri) =>
 					promotedImage2Uri = uri
 				case COMPONENT_LINE(x,y,w,h,uri,StringEscape(name)) =>
 					components += new CompoundImageComponent(x.toInt,y.toInt,w.toInt,h.toInt,uri,name)
+				case SOURCE_LINE(c) =>
+					generatedFromUri = c
+				case GENERATOR_LINE(StringEscape(c)) =>
+					generatorInfo = c
+				case OTHER_GENERATOR_LINE(c) =>
+					generatorInfo = c
+				case _ =>
+					System.err.println("Notice: Unrecognised line in CompoundImage data: "+line)
 			}
 			line = br.readLine()
 		}
-		new CompoundImage( width, height, components.toList, promotedImage1Uri, promotedImage2Uri, generatedFromUri, totalImageCount, totalByteCount )
+		new CompoundImage( width, height, components.toList, promotedImage1Uri, promotedImage2Uri, generatedFromUri, totalImageCount, totalByteCount, generatorInfo )
 	}
 	
 	implicit def compoundImageAsBlob( i:CompoundImage ):ByteBlob = i.serialize()

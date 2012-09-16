@@ -2,9 +2,7 @@ package togos.picgrid.image
 
 import java.io.File
 import java.lang.Integer
-
 import scala.collection.mutable.HashMap
-
 import togos.picgrid.file.FileUtil.makeParentDirs
 import togos.picgrid.file.FSDatastore
 import togos.picgrid.file.FSSHA1Datastore
@@ -45,6 +43,7 @@ class ImageMagickFallbackSource( val datastore:FSDatastore, val imConvert:Comman
  * the edges being snipped off.
  */
 class ImageMagickCropResizer( val datastore:FSDatastore, val imConvert:CommandLine, val fallbackImageSource:(String,Int,Int)=>String )
+	extends ImageResizer
 {
 	def this( datastore:FSDatastore, imConvert:CommandLine ) = this(datastore,imConvert,null)
 	

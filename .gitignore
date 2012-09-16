@@ -3,6 +3,8 @@
 .project
 .settings
 .scala_dependencies
+scala-src.lst
+java-src.lst
 junk
 bin
 *.jpg

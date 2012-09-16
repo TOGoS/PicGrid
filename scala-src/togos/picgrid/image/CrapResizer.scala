@@ -8,7 +8,7 @@ import togos.picgrid.BetterByteArrayOutputStream
 import togos.picgrid.BlobAutoStore
 import togos.blob.SingleChunkByteBlob
 
-class CrapResizer
+class CrapResizer extends ImageResizer
 {
 	var datastore:BlobAutoStore = null
 	

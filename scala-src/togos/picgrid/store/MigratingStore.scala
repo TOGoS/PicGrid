@@ -1,4 +1,5 @@
 package togos.picgrid.store
+
 import togos.ccouch2.store.Store
 
 class MigratingStore[K,V]( val old:Function[K,V], val neu:Store[K,V]) extends Store[K,V]

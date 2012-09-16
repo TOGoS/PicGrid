@@ -11,16 +11,16 @@ class MultiFitLayouter( val subLayouters:Seq[Layouter] ) extends Layouter
 		return str
 	}
 	
-	def size( cs:Seq[CompoundImageComponent] ):(Int,Int) = {
+	def size( cs:Seq[LayoutCell] ):(Float,Float) = {
 		if( cs.size == 0 ) return (0,0)
 		
-		var minX, minY = Int.MaxValue
-		var maxX, maxY = Int.MinValue
+		var minX, minY = Float.MaxValue
+		var maxX, maxY = Float.MinValue
 		for( c <- cs ) {
 			if( c.x < minX ) minX = c.x
 			if( c.y < minY ) minY = c.y
-			if( c.x + c.width > maxX ) maxX = c.x + c.width
-			if( c.y + c.height > maxY ) maxY = c.y + c.height
+			if( c.x + c.w > maxX ) maxX = c.x + c.w
+			if( c.y + c.h > maxY ) maxY = c.y + c.h
 		}
 		return (maxX-minX,maxY-minY)
 	}
@@ -30,7 +30,7 @@ class MultiFitLayouter( val subLayouters:Seq[Layouter] ) extends Layouter
 	// TODO: Take weight / size ratio into account
 	// (will be easier when CICs are replaced with LayoutCells)
 	
-	def fitness( cs:Seq[CompoundImageComponent] ):Float = {
+	def fitness( cs:Seq[LayoutCell] ):Float = {
 		// -1 for more than 12x variation in area
 		// -1 for ratio more diff than 2:1
 		// -2 for width or height of a component < 16 
@@ -38,14 +38,14 @@ class MultiFitLayouter( val subLayouters:Seq[Layouter] ) extends Layouter
 		
 		if( cs.size == 0 ) return 0
 		
-		var minArea = Int.MaxValue
-		var maxArea = Int.MinValue
+		var minArea = Float.MaxValue
+		var maxArea = Float.MinValue
 		var hasTinyImages = false 
 		for( c <- cs ) {
-			val a = c.width * c.height
+			val a = c.w * c.h
 			if( a < minArea ) minArea = a
 			if( a > maxArea ) maxArea = a
-			if( c.width < 16 || c.height < 16 ) hasTinyImages = true
+			if( c.w < 16 || c.h < 16 ) hasTinyImages = true
 		}
 		val (w,h) = size(cs)
 		
@@ -57,12 +57,12 @@ class MultiFitLayouter( val subLayouters:Seq[Layouter] ) extends Layouter
 		return fitness
 	}
 	
-	def gridify( images:Seq[ImageEntry] ):Seq[CompoundImageComponent] = {
+	def layout( images:Seq[ImageEntry] ):Layout = {
 		var bestFitness = Float.MinValue
-		var mostFit:Seq[CompoundImageComponent] = null
+		var mostFit:Layout = null
 		for( l <- subLayouters ) {
-			val cs = l.gridify( images )
-			val fit = fitness(cs)
+			val cs = l.layout( images )
+			val fit = fitness(cs.cells)
 			if( fit > bestFitness ) {
 				mostFit = cs
 				bestFitness = fit

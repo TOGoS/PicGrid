@@ -33,6 +33,7 @@ class CompoundImageHTMLizer(
 		(if(titleBlock != null) titleBlock + "\n" else "") +
 		"<meta name=\"generated-from-compound-image\" content=\""+ciUri+"\"/>\n" +
 		(if(ci.generatedFromUri != null) "<meta name=\"generated-from-directory\" content=\""+ci.generatedFromUri+"\"/>\n" else "") +
+		(if(ci.generatorInfo != null) "<meta name=\"generator-info\" content=\""+ci.generatorInfo+"\"/>\n" else "") +
 		"<style>/* <![CDATA[ */\n" +
 		"    body {\n" +
 		"        background-color: black;\n" +

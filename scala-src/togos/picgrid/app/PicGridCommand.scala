@@ -128,7 +128,6 @@ object PicGridCommand {
 			System.err.println("Unrecognised command: "+subCmdName)
 			System.err.println(USAGE)
 			System.exit(1)
-			null
 		} 
 	}
 }
