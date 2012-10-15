@@ -16,10 +16,7 @@ import togos.picgrid.MemoryFunctionCache
 import togos.picgrid.image.ImageMagickCommands
 import togos.picgrid.file.FSSHA1Datastore
 import java.io.File
-import java.io.FileWriter
-import java.io.IOException
-import java.io.OutputStreamWriter
-import java.io.Writer
+import java.io.PrintStream
 import scala.collection.mutable.ListBuffer
 
 object ComposeCommand
@@ -46,9 +43,9 @@ object ComposeCommand
 		"  -datastore <dir> ; dir to store output data in\n" +
 		"  -datasource <dir> ; dir in which to find input data\n" +
 		"  -ms-datasource <dir> ; dir containing dirs in which to find input data\n" +
-		"  -resource-log <file> ; where to write generated data URNs; may be '-'\n" +
-		"    for standard output, or of the form '| command args ...' to pipe to another\n" +
-		"    program.\n" +
+		"  -resource-log <file> ; file ('-' means standard output) to which to write\n" +
+		"                       ; URNs of generated and referenced blobs.\n" +
+		"                       ; Multiple '-resource-log's may be specified.\n" +
 		"  -from-directory      ; force to treat source as a directory.\n" +
 		"  -from-compound-image ; force to treat source as a compound image.\n" +
 		"  -to-compound-image   ; final output is a compound image.\n" +
@@ -69,7 +66,7 @@ object ComposeCommand
 		var verbose = false
 		var i = 0
 		var sourceUri:String = null
-		var refStoragePath:String = null
+		var resourceLogPaths = List[String]()
 		var sourceType:String = null
 		var targetType:String = "html"
 		var layouterName:String = "multifit:1280x800"
@@ -100,7 +97,7 @@ object ComposeCommand
 					}
 				case "-resource-log" =>
 					i += 1
-					refStoragePath = args(i)
+					resourceLogPaths = args(i) :: resourceLogPaths
 				case "-from-directory" =>
 					sourceType = "directory"
 				case "-from-compound-image" =>
@@ -143,56 +140,19 @@ object ComposeCommand
 			}
 		}
 		
-		var refLogProcess:Process = null
-		var refWriter:Writer = null
-		var refWritingCancelled = false
-		val refLogger:String=>Unit = if( refStoragePath == null ) {
-			((a:String) => {})
-		} else if( refStoragePath.equals("-") ) {
-			((a:String) => System.out.println(a) )
-		} else if( refStoragePath.startsWith("|") ) {
-			val command = refStoragePath.substring(1).trim()
-			((a:String) => {
-				if( !refWritingCancelled ) {
-					if( refWriter == null ) {
-						refLogProcess = Runtime.getRuntime().exec(command)
-						refWriter = new OutputStreamWriter( refLogProcess.getOutputStream() )
-						new Thread() {
-							override def run() {
-								val is = refLogProcess.getInputStream()
-								var z = 0
-								val buf = new Array[Byte](65536)
-								while( z != -1 ) {
-									z = is.read( buf )
-									if( z > 0 ) System.out.write( buf, 0, z )
-								}
-								is.close()
-							}
-						}.start()
-					}
-					try {
-						refWriter.write( a + "\n" )
-						refWriter.flush()
-					} catch {
-					  	case e:IOException =>
-						     	System.err.println("Error writing to resource log process '"+command+"': "+e.getMessage())
-							refWritingCancelled = true
-					}
-				}
-			})
-		} else {
-			((a:String) => {
-				if( refWriter == null ) {
-					val refFile:File = new File(refStoragePath)
-					FileUtil.makeParentDirs( refFile )
-					refWriter = new FileWriter( refFile )
-				}
-				refWriter.write( a + "\n" )
-			})
+		var resourceLogStreams:Seq[PrintStream] = for( p <- resourceLogPaths ) yield p match {
+			case "-" =>
+				System.out
+			case _ =>
+				val resLogFile:File = new File(p)
+				FileUtil.makeParentDirs( resLogFile )
+				new PrintStream( resLogFile )
 		}
+		val resourceLogger:String=>Unit = ((r:String) => for( l <- resourceLogStreams ) l.println(r))
 		
 		val imageInfoExtractor = new ImageInfoExtractor( getCache(functionCacheDir, "image-dimensions"), datastore )
-		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert, new ImageMagickFallbackSource(datastore, ImageMagickCommands.convert) )
+		val resizer = new ImageMagickCropResizer( datastore, ImageMagickCommands.convert,
+		                                          new ImageMagickFallbackSource(datastore, ImageMagickCommands.convert) )
 		
 		val compoundImageUri = sourceType match {
 		case "directory" =>
@@ -225,7 +185,7 @@ object ComposeCommand
 		val rasterizer:(String=>String) = new CompoundImageRasterizer( getCache(functionCacheDir, "rasterize"), datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
 		val loggingRasterizer = { a:String =>
 			val res = rasterizer(a)
-			refLogger(res)
+			resourceLogger(res)
 			res
 		}
 		
@@ -243,18 +203,17 @@ object ComposeCommand
 		
 		//// Pagify
 		
-		val htmlizer = new CompoundImageHTMLizer( getCache(functionCacheDir, "htmlization"), datastore, imageInfoExtractor, rasterizer, refLogger )
+		val htmlizer = new CompoundImageHTMLizer( getCache(functionCacheDir, "htmlization"), datastore, imageInfoExtractor, rasterizer, resourceLogger )
 		
 		val pageUri = htmlizer.pagify( compoundImageUri )
-		refLogger( pageUri )
+		resourceLogger( pageUri )
 		
 		if( verbose ) {
 			System.out.println( "# Page URI" )
 		}
 		System.out.println( pageUri );
 		
-		if( refWriter != null ) refWriter.close()
-		if( refLogProcess != null ) refLogProcess.waitFor()
+		for( l <- resourceLogStreams ) l.close()		
 		
 		if( verbose ) {
 			System.out.println( "# Page URI (again, in case it scrolled away)" )
