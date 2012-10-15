@@ -12,8 +12,8 @@ class CrapResizer extends ImageResizer
 {
 	var datastore:BlobAutoStore = null
 	
-	def load( orig:ImageHandle ):BufferedImage = {
-		val data = datastore(orig.uri);
+	def load( origUri:String ):BufferedImage = {
+		val data = datastore(origUri);
 		if( data == null ) return null
 		val is = new ByteBlobInputStream(data.chunkIterator())
 		ImageIO.read(is)
@@ -34,15 +34,14 @@ class CrapResizer extends ImageResizer
 		(newWidth, newHeight)
 	}
 	
-	def resize( orig:ImageHandle, boxWidth:Int, boxHeight:Int ):ImageHandle = {
-		val oImg = load(orig)
-		if( oImg == null ) throw new Exception("Couldn't find "+orig.uri)
+	def resize( origUri:String, boxWidth:Int, boxHeight:Int ):String = {
+		val oImg = load(origUri)
+		if( oImg == null ) throw new Exception("Couldn't find "+origUri)
 		val (w,h) = fit( oImg.getWidth(null), oImg.getHeight(null), boxWidth, boxHeight )
 		
 		val thamb:BufferedImage = ResizeUtil.chrisResize( oImg, w, h )
 		val baos:BetterByteArrayOutputStream = new BetterByteArrayOutputStream()
 		ImageIO.write( thamb, "jpeg", baos )
-		val thambUri = datastore.store( new SingleChunkByteBlob(baos) )
-		new ImageHandle( thambUri, ImageFormat.JPEG, baos.getSize(), thamb.getWidth(null), thamb.getHeight(null) )
+		datastore.store( new SingleChunkByteBlob(baos) )
 	}
 }

@@ -1,18 +1,6 @@
 package togos.picgrid.app
 
-import togos.picgrid.store.MigratingStore
-import togos.picgrid.FunctionCache
-import togos.picgrid.file.SLFFunctionCache
-import togos.picgrid.file.SLF2FunctionCache
-import togos.picgrid.MemoryFunctionCache
-import scala.collection.mutable.ListBuffer
-import togos.picgrid.image.ImageMagickCommands
-import java.io.File
-import togos.picgrid.file.FSSHA1Datastore
-import java.io.Writer
-import java.io.OutputStreamWriter
 import togos.picgrid.file.FileUtil
-import java.io.FileWriter
 import togos.picgrid.image.ImageInfoExtractor
 import togos.picgrid.image.ImageMagickCropResizer
 import togos.picgrid.layout.Layouter
@@ -20,6 +8,19 @@ import togos.picgrid.Gridifier
 import togos.picgrid.CompoundImageRasterizer
 import togos.picgrid.CompoundImageHTMLizer
 import togos.picgrid.image.ImageMagickFallbackSource
+import togos.picgrid.store.MigratingStore
+import togos.picgrid.FunctionCache
+import togos.picgrid.file.SLFFunctionCache
+import togos.picgrid.file.SLF2FunctionCache
+import togos.picgrid.MemoryFunctionCache
+import togos.picgrid.image.ImageMagickCommands
+import togos.picgrid.file.FSSHA1Datastore
+import java.io.File
+import java.io.FileWriter
+import java.io.IOException
+import java.io.OutputStreamWriter
+import java.io.Writer
+import scala.collection.mutable.ListBuffer
 
 object ComposeCommand
 {
@@ -142,8 +143,9 @@ object ComposeCommand
 			}
 		}
 		
-		var resource:Process = null
+		var refLogProcess:Process = null
 		var refWriter:Writer = null
+		var refWritingCancelled = false
 		val refLogger:String=>Unit = if( refStoragePath == null ) {
 			((a:String) => {})
 		} else if( refStoragePath.equals("-") ) {
@@ -151,24 +153,32 @@ object ComposeCommand
 		} else if( refStoragePath.startsWith("|") ) {
 			val command = refStoragePath.substring(1).trim()
 			((a:String) => {
-				if( refWriter == null ) {
-					resource = Runtime.getRuntime().exec(command)
-					refWriter = new OutputStreamWriter( resource.getOutputStream() )
-					new Thread() {
-						override def run() {
-							val is = resource.getInputStream()
-							var z = 0
-							val buf = new Array[Byte](65536)
-							while( z != -1 ) {
-								z = is.read( buf )
-								if( z > 0 ) System.out.write( buf, 0, z )
+				if( !refWritingCancelled ) {
+					if( refWriter == null ) {
+						refLogProcess = Runtime.getRuntime().exec(command)
+						refWriter = new OutputStreamWriter( refLogProcess.getOutputStream() )
+						new Thread() {
+							override def run() {
+								val is = refLogProcess.getInputStream()
+								var z = 0
+								val buf = new Array[Byte](65536)
+								while( z != -1 ) {
+									z = is.read( buf )
+									if( z > 0 ) System.out.write( buf, 0, z )
+								}
+								is.close()
 							}
-							is.close()
-						}
-					}.start()
+						}.start()
+					}
+					try {
+						refWriter.write( a + "\n" )
+						refWriter.flush()
+					} catch {
+					  	case e:IOException =>
+						     	System.err.println("Error writing to resource log process '"+command+"': "+e.getMessage())
+							refWritingCancelled = true
+					}
 				}
-				refWriter.write( a + "\n" )
-				refWriter.flush()
 			})
 		} else {
 			((a:String) => {
@@ -244,7 +254,7 @@ object ComposeCommand
 		System.out.println( pageUri );
 		
 		if( refWriter != null ) refWriter.close()
-		if( resource != null ) resource.waitFor()
+		if( refLogProcess != null ) refLogProcess.waitFor()
 		
 		if( verbose ) {
 			System.out.println( "# Page URI (again, in case it scrolled away)" )
