@@ -7,6 +7,7 @@ import togos.picgrid.BlobConversions.stringAsByteBlob
 import togos.picgrid.BlobConversions.stringAsByteChunk
 import togos.picgrid.BlobConversions.byteChunkAsString
 import togos.picgrid.util.URIUtil.uriEncodePathSegment
+import togos.picgrid.util.HTMLUtil.htmlEscape
 
 class CompoundImageHTMLizer(
 	val functionCache:FunctionCache,
@@ -15,11 +16,18 @@ class CompoundImageHTMLizer(
 	val gridRenderer:(String=>String),
 	val referencedUriCallback:(String=>Unit)
 ) {
+	val cacheVersion = 13
+	def imageCacheKey( imageUri:String ) = "htmlize-v"+cacheVersion+":"+imageUri
+	
 	def url( urn:String, name:String ):String = {
 		assert( urn != null )
 		referencedUriCallback(urn)
 		"../" + uriEncodePathSegment(urn) + "/" + uriEncodePathSegment(if(name != null) name else urn)
 	}
+	
+	val paddingX = 6
+	val paddingY = 2
+	val borderWidth = 1
 	
 	def header( ciUri:String, ci:CompoundImage ) = {
 		val titleBlock = if( ci.generatedFromUri != null ) {
@@ -38,6 +46,23 @@ class CompoundImageHTMLizer(
 		"    body {\n" +
 		"        background-color: black;\n" +
 		"        color: white;\n" +
+		"    }\n" +
+		"    a.gridpic {\n" +
+		"        display: block;\n" +
+		"        color: transparent;\n" +
+		"        font-size: 10pt;\n" +
+		"        font-family: \"Arial Black\", \"sans-serif\";\n" +
+		"        text-decoration: none;\n" +
+		"        overflow: hidden;\n" +
+		"        box-sizing: content-box; /* For bestest compatibility! */\n" +
+		"        margin: 0;\n" +
+		"        padding: "+paddingY+"px "+paddingX+"px;\n" +
+		"        border: "+borderWidth+"px solid transparent;\n" +
+		"    }\n" +
+		"    a.gridpic:hover {\n" +
+		"        color: white;\n" +
+		"        text-shadow: 0 0 10px black;\n" +
+		"        border: "+borderWidth+"px solid white;\n" +
 		"    }\n" +
 		"/* ]]> */</style>\n" +
 		"</head><body>\n"
@@ -61,19 +86,27 @@ class CompoundImageHTMLizer(
 				} else {
 					url(pagify( ic.uri ), ic.name+".html")
 				}
-			
-			s.append("<a href=\""+targetUrl+"\" style=\""+
-				"display:block; background-image: url('"+bgUrl+"'); "+
-				"width:"+ic.width+"px; "+"height:"+ic.height+"px; "+
-				"position: absolute; top:"+ic.y+"px; left:"+ic.x+"px; " +
-				"background-position: -"+ic.x+" -"+ic.y+"\"></a>\n")
+
+			// Stupid content-box
+			val dw = -(paddingX+borderWidth)*2
+			val dh = -(paddingY+borderWidth)*2
+			s.append("<a href=\""+targetUrl+"\" class=\"gridpic\" style=\""+
+				"background-image: url('"+bgUrl+"'); "+
+				"width:"+(ic.width+dw)+"px; "+
+				"height:"+(ic.height+dh)+"px; "+
+				"position: absolute; "+
+				"top:"+ic.y+"px; "+
+				"left:"+ic.x+"px; " +
+				"background-position: "+(-ic.x-borderWidth)+"px "+(-ic.y-borderWidth)+"px\">" +
+				htmlEscape(ic.name) + "</a>\n")
 		}
 		s.append("</div>\n</div>\n</div>\n")
 		s.toString()
 	}
 	
 	def pagify( imageUri:String ):String = {
-		var htmlUrn = functionCache(imageUri)
+		val cacheKey = imageCacheKey(imageUri)
+		var htmlUrn = functionCache(cacheKey)
 		if( htmlUrn != null ) return htmlUrn 
 		
 		val imageType = imageInfoExtractor.getImageType(imageUri)
@@ -90,7 +123,7 @@ class CompoundImageHTMLizer(
 		val html = header(imageUri,ci) + imageDiv( rasterizedUrl, ci ) + footer( ci )
 		
 		htmlUrn = datastore.store( html )
-		functionCache(imageUri) = htmlUrn
+		functionCache(cacheKey) = htmlUrn
 		htmlUrn
 	}
 }
