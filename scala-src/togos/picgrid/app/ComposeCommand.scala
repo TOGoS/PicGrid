@@ -195,19 +195,14 @@ object ComposeCommand
 		val rasterizer:(String=>String) = new CompoundImageRasterizer(
 			getCache(functionCacheDir, "rasterize"), datastore,
 			imageInfoExtractor, resizer, ImageMagickCommands.convert )
-		val loggingRasterizer = { a:String =>
-			val res = rasterizer(a)
-			resourceLogger(res)
-			res
-		}
 		
 		val rasterizationUri = rasterizer( compoundImageUri )
-
+		
 		if( targetType == "raster-image" ) {
 			System.out.println( rasterizationUri )
 			return
 		}
-
+		
 		if( verbose ) {
 			System.out.println( "# Raster image URI" )
 			System.out.println( rasterizationUri )
