@@ -6,7 +6,8 @@ import togos.picgrid.image.ImageMagickCropResizer
 import togos.picgrid.layout.Layouter
 import togos.picgrid.Gridifier
 import togos.picgrid.CompoundImageRasterizer
-import togos.picgrid.CompoundImageHTMLizer
+import togos.picgrid.CompoundImageSimpleHTMLizer
+import togos.picgrid.CompoundImageHoverHTMLizer
 import togos.picgrid.image.ImageMagickFallbackSource
 import togos.picgrid.store.MigratingStore
 import togos.picgrid.FunctionCache
@@ -38,6 +39,7 @@ object ComposeCommand
 		"Options:\n" +
 		"  -v ; be verbose\n" +
 		"  -layouter <name>:<w>x<h> ; specify layout algorithm and maximum size\n" +
+		"  -page-style <name>  ; specify style of HTML pages to be generated\n" +
 		"  -convert-path <exe> ; path to convert.exe\n" +
 		"  -function-cache-dir <dir> ; dir to store function results in\n" +
 		"  -datastore <dir> ; dir to store output data in\n" +
@@ -57,7 +59,11 @@ object ComposeCommand
 		"           ; and vertically.\n" +
 		"  rowly    ; divides the list into rows naievely.\n" +
 		"  multifit ; uses multiple algorithms and tries to pick the most\n" +
-		"           ; plesant output."
+		"           ; plesant output.\n" +
+		"\n" +
+		"Page styles:\n" +
+		"  simple   ; undecorated image thumbnails\n" +
+		"  hover    ; thumbnails have hover borders and labels"
 	
 	def main( cmdName:String, args:Array[String] ) {
 		var datastoreDir:String = null
@@ -70,6 +76,7 @@ object ComposeCommand
 		var sourceType:String = null
 		var targetType:String = "html"
 		var layouterName:String = "multifit:1280x800"
+		var pageStyle:String = "simple"
 		while( i < args.length ) {
 			args(i) match {
 				case "-v" =>
@@ -77,6 +84,9 @@ object ComposeCommand
 				case "-layouter" =>
 					i += 1
 					layouterName = args(i)
+				case "-page-style" =>
+					i += 1
+					pageStyle = args(i)
 				case "-convert-path" =>
 					i += 1
 					ImageMagickCommands.convertPath = args(i)
@@ -182,7 +192,9 @@ object ComposeCommand
 		
 		//// Rasterize
 		
-		val rasterizer:(String=>String) = new CompoundImageRasterizer( getCache(functionCacheDir, "rasterize"), datastore, imageInfoExtractor, resizer, ImageMagickCommands.convert )
+		val rasterizer:(String=>String) = new CompoundImageRasterizer(
+			getCache(functionCacheDir, "rasterize"), datastore,
+			imageInfoExtractor, resizer, ImageMagickCommands.convert )
 		val loggingRasterizer = { a:String =>
 			val res = rasterizer(a)
 			resourceLogger(res)
@@ -203,9 +215,19 @@ object ComposeCommand
 		
 		//// Pagify
 		
-		val htmlizer = new CompoundImageHTMLizer( getCache(functionCacheDir, "htmlization"), datastore, imageInfoExtractor, rasterizer, resourceLogger )
+		val htmlizer:(String=>String) = pageStyle match {
+			case "simple" => new CompoundImageSimpleHTMLizer(
+				getCache(functionCacheDir, "htmlization"), datastore,
+				imageInfoExtractor, rasterizer, resourceLogger )
+			case "hover" => new CompoundImageHoverHTMLizer(
+				getCache(functionCacheDir, "htmlization"), datastore,
+				imageInfoExtractor, rasterizer, resourceLogger )
+			case _ =>
+				System.err.println("Unrecognised page style: '"+pageStyle+"'")
+				System.exit(1) ; null
+		}
 		
-		val pageUri = htmlizer.pagify( compoundImageUri )
+		val pageUri = htmlizer( compoundImageUri )
 		resourceLogger( pageUri )
 		
 		if( verbose ) {

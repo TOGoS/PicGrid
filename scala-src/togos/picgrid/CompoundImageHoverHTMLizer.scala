@@ -9,15 +9,15 @@ import togos.picgrid.BlobConversions.byteChunkAsString
 import togos.picgrid.util.URIUtil.uriEncodePathSegment
 import togos.picgrid.util.HTMLUtil.htmlEscape
 
-class CompoundImageHTMLizer(
+class CompoundImageHoverHTMLizer(
 	val functionCache:FunctionCache,
 	val datastore:BlobAutoStore,
 	val imageInfoExtractor:ImageInfoExtractor,
 	val gridRenderer:(String=>String),
 	val referencedUriCallback:(String=>Unit)
-) {
-	val cacheVersion = 13
-	def imageCacheKey( imageUri:String ) = "htmlize-v"+cacheVersion+":"+imageUri
+) extends (String=>String) {
+	val cacheVersion = 1
+	def imageCacheKey( imageUri:String ) = "hover-htmlize-v"+cacheVersion+":"+imageUri
 	
 	def url( urn:String, name:String ):String = {
 		assert( urn != null )
@@ -84,7 +84,7 @@ class CompoundImageHTMLizer(
 				if(imageType.isRaster) {
 					url(ic.uri,ic.name)
 				} else {
-					url(pagify( ic.uri ), ic.name+".html")
+					url( apply( ic.uri ), ic.name+".html" )
 				}
 
 			// Stupid content-box
@@ -104,7 +104,7 @@ class CompoundImageHTMLizer(
 		s.toString()
 	}
 	
-	def pagify( imageUri:String ):String = {
+	def apply( imageUri:String ):String = {
 		val cacheKey = imageCacheKey(imageUri)
 		var htmlUrn = functionCache(cacheKey)
 		if( htmlUrn != null ) return htmlUrn 
