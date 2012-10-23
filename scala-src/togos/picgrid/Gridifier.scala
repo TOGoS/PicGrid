@@ -92,8 +92,12 @@ class Gridifier(
 	
 	lazy val configHash = layouter.cacheString
 	
+	/**
+	 * Name is theoretically not needed, but is
+	 * currently used to guess file types.
+	 */
 	def gridifyDir( uri:String, name:String ):ImageEntry = {
-		val cacheKey = configHash+":"+uri
+		val cacheKey = configHash+":"+uri+"??name="+name
 		val cachedData:ByteChunk = functionCache( cacheKey )
 		if( cachedData != null ) {
 			SerializationUtil.unserialize(cachedData).asInstanceOf[ImageEntry]
