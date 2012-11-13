@@ -102,7 +102,10 @@ object ComposeCommand
 				case "-ms-datasource" => // Multi-sector datasource (e.g. ccouch/data)
 					i += 1
 					val msd = new File(args(i))
-					for( f <- msd.listFiles() ) if( f.isDirectory() ) {
+					val sectorDirs = msd.listFiles()
+					if( sectorDirs == null ) {
+						System.err.println("Warning: multi-datasource directory '"+msd+"' does not exist.");
+					} else for( f <- sectorDirs ) if( f.isDirectory() ) {
 						datasources += f.getPath();
 					}
 				case "-resource-log" =>
