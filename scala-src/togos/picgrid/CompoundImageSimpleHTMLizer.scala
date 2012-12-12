@@ -15,7 +15,7 @@ class CompoundImageSimpleHTMLizer(
 	val gridRenderer:(String=>String),
 	val referencedUriCallback:(String=>Unit)
 ) extends (String=>String) {
-	val cacheVersion = 1
+	val cacheVersion = 2
 	def imageCacheKey( imageUri:String ) = "simple-htmlize-v"+cacheVersion+":"+imageUri
 	
 	def url( urn:String, name:String ):String = {
@@ -69,7 +69,7 @@ class CompoundImageSimpleHTMLizer(
 				"display:block; background-image: url('"+bgUrl+"'); "+
 				"width:"+ic.width+"px; "+"height:"+ic.height+"px; "+
 				"position: absolute; top:"+ic.y+"px; left:"+ic.x+"px; " +
-				"background-position: -"+ic.x+" -"+ic.y+"\"></a>\n")
+				"background-position: "+(-ic.x)+"px "+(-ic.y)+"px\"></a>\n")
 		}
 		s.append("</div>\n</div>\n</div>\n")
 		s.toString()
