@@ -16,8 +16,9 @@ class CompoundImageHoverHTMLizer(
 	val gridRenderer:(String=>String),
 	val referencedUriCallback:(String=>Unit)
 ) extends (String=>String) {
-	val cacheVersion = 1
-	def imageCacheKey( imageUri:String ) = "hover-htmlize-v"+cacheVersion+":"+imageUri
+	val generatorVersion = 4
+	val generatorId = "hover-htmlize-v"+generatorVersion
+	def imageCacheKey( imageUri:String ) = generatorId+":"+imageUri
 	
 	def url( urn:String, name:String ):String = {
 		assert( urn != null )
@@ -41,7 +42,8 @@ class CompoundImageHoverHTMLizer(
 		(if(titleBlock != null) titleBlock + "\n" else "") +
 		"<meta name=\"generated-from-compound-image\" content=\""+ciUri+"\"/>\n" +
 		(if(ci.generatedFromUri != null) "<meta name=\"generated-from-directory\" content=\""+ci.generatedFromUri+"\"/>\n" else "") +
-		(if(ci.generatorInfo != null) "<meta name=\"generator-info\" content=\""+ci.generatorInfo+"\"/>\n" else "") +
+		(if(ci.generatorInfo != null) "<meta name=\"layout-generator-info\" content=\""+ci.generatorInfo+"\"/>\n" else "") +
+		"<meta name=\"html-generator-info\" content=\""+generatorId+"\"/>\n" else "") +
 		"<style>/* <![CDATA[ */\n" +
 		"    body {\n" +
 		"        background-color: black;\n" +
@@ -54,10 +56,12 @@ class CompoundImageHoverHTMLizer(
 		"        font-family: \"Arial Black\", \"sans-serif\";\n" +
 		"        text-decoration: none;\n" +
 		"        overflow: hidden;\n" +
-		"        box-sizing: content-box; /* For bestest compatibility! */\n" +
+		"        -moz-box-sizing: border-box;\n" +
+		"        -webkit-box-sizing: border-box;\n" +
+		"        box-sizing: border-box;\n" +
+		"        -moz-background-origin: border;\n" +
+		"        background-origin: border-box;\n" +
 		"        margin: 0;\n" +
-		"        padding: "+paddingY+"px "+paddingX+"px;\n" +
-		"        border: "+borderWidth+"px solid transparent;\n" +
 		"    }\n" +
 		"    a.gridpic:hover {\n" +
 		"        color: white;\n" +
@@ -86,18 +90,15 @@ class CompoundImageHoverHTMLizer(
 				} else {
 					url( apply( ic.uri ), ic.name+".html" )
 				}
-
-			// Stupid content-box
-			val dw = -(paddingX+borderWidth)*2
-			val dh = -(paddingY+borderWidth)*2
+			
 			s.append("<a href=\""+targetUrl+"\" class=\"gridpic\" style=\""+
 				"background-image: url('"+bgUrl+"'); "+
-				"width:"+(ic.width+dw)+"px; "+
-				"height:"+(ic.height+dh)+"px; "+
+				"width:"+ic.width+"px; "+
+				"height:"+ic.height+"px; "+
 				"position: absolute; "+
 				"top:"+ic.y+"px; "+
 				"left:"+ic.x+"px; " +
-				"background-position: "+(-ic.x-borderWidth)+"px "+(-ic.y-borderWidth)+"px\">" +
+				"background-position: "+(-ic.x)+"px "+(-ic.y)+"px\">" +
 				htmlEscape(ic.name) + "</a>\n")
 		}
 		s.append("</div>\n</div>\n</div>\n")

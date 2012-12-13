@@ -15,8 +15,9 @@ class CompoundImageSimpleHTMLizer(
 	val gridRenderer:(String=>String),
 	val referencedUriCallback:(String=>Unit)
 ) extends (String=>String) {
-	val cacheVersion = 2
-	def imageCacheKey( imageUri:String ) = "simple-htmlize-v"+cacheVersion+":"+imageUri
+	val generatorVersion = 3
+	val generatorId = "simple-htmlize-v"+generatorVersion
+	def imageCacheKey( imageUri:String ) = generatorId+":"+imageUri
 	
 	def url( urn:String, name:String ):String = {
 		assert( urn != null )
@@ -36,7 +37,8 @@ class CompoundImageSimpleHTMLizer(
 		(if(titleBlock != null) titleBlock + "\n" else "") +
 		"<meta name=\"generated-from-compound-image\" content=\""+ciUri+"\"/>\n" +
 		(if(ci.generatedFromUri != null) "<meta name=\"generated-from-directory\" content=\""+ci.generatedFromUri+"\"/>\n" else "") +
-		(if(ci.generatorInfo != null) "<meta name=\"generator-info\" content=\""+ci.generatorInfo+"\"/>\n" else "") +
+		(if(ci.generatorInfo != null) "<meta name=\"layout-generator-info\" content=\""+ci.generatorInfo+"\"/>\n" else "") +
+		"<meta name=\"html-generator-info\" content=\""+generatorId+"\"/>\n" else "") +
 		"<style>/* <![CDATA[ */\n" +
 		"    body {\n" +
 		"        background-color: black;\n" +
