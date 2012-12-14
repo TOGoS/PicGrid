@@ -38,7 +38,7 @@ class CompoundImageSimpleHTMLizer(
 		"<meta name=\"generated-from-compound-image\" content=\""+ciUri+"\"/>\n" +
 		(if(ci.generatedFromUri != null) "<meta name=\"generated-from-directory\" content=\""+ci.generatedFromUri+"\"/>\n" else "") +
 		(if(ci.generatorInfo != null) "<meta name=\"layout-generator-info\" content=\""+ci.generatorInfo+"\"/>\n" else "") +
-		"<meta name=\"html-generator-info\" content=\""+generatorId+"\"/>\n" else "") +
+		"<meta name=\"html-generator-info\" content=\""+generatorId+"\"/>\n" +
 		"<style>/* <![CDATA[ */\n" +
 		"    body {\n" +
 		"        background-color: black;\n" +
