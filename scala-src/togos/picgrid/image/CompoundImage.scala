@@ -1,11 +1,11 @@
 package togos.picgrid.image
 
-import java.io.BufferedReader
+import scala.collection.mutable.ListBuffer
+import scala.language.implicitConversions
 
+import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.lang.Integer
-
-import scala.collection.mutable.ListBuffer
 
 import togos.blob.util.ByteBlobInputStream
 import togos.blob.ByteBlob

@@ -1,5 +1,7 @@
 package togos.picgrid
 
+import scala.language.implicitConversions
+
 import togos.picgrid.store.DataMap;
 import togos.picgrid.store.DataMapFunctionCache
 

@@ -1,10 +1,12 @@
 package togos.picgrid
 
+import scala.collection.JavaConversions
+import scala.language.implicitConversions
+
 import java.io.ByteArrayOutputStream
 
 import togos.blob.ByteChunk
 import togos.blob.ByteBlob
-import scala.collection.JavaConversions
 import togos.blob.SimpleByteChunk
 import togos.blob.SingleChunkByteBlob
 
