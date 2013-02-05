@@ -12,7 +12,8 @@ import togos.picgrid.BitprintDigest
 
 class FSSHA1Datastore(val dir: File, val extraReadDirs: List[String] = List()) extends FSDatastore {
 	val readDirs = if (dir == null) extraReadDirs else dir.getPath() :: extraReadDirs
-
+	
+	val SHA1_REGEX     = """^urn:sha1:([^\.]+)$""".r
 	val BITPRINT_REGEX = """^urn:bitprint:([^\.]+)\.([^\.]+)$""".r
 
 	protected def subSectorPath(sha1: String) = sha1.substring(0, 2) + "/" + sha1
@@ -31,18 +32,20 @@ class FSSHA1Datastore(val dir: File, val extraReadDirs: List[String] = List()) e
 	protected def tempFileFor( sha1:String ):File = {
 		new File(dir + "/" + sha1.substring(0,2) + "/." + sha1 + ".temp-" + (math.random*Integer.MAX_VALUE).toInt)
 	}
-	
-	def apply( uri:String ):ByteBlob = {
-		uri match {
-			case BITPRINT_REGEX(sha1, tt) =>
-				val sp = subSectorPath(sha1)
-				for (d <- readDirs) {
-					val f = new File(d + "/" + sp)
-					if (f.exists) return new FileBlob(f)
-				}
-			case _ =>
+		
+	def byBase32Sha1( sha1:String ):ByteBlob = {
+		val sp = subSectorPath(sha1)
+		for (d <- readDirs) {
+			val f = new File(d + "/" + sp)
+			if (f.exists) return new FileBlob(f)
 		}
 		null
+	}
+	
+	def apply( uri:String ):ByteBlob = uri match {
+		case SHA1_REGEX(sha1) => byBase32Sha1(sha1)
+		case BITPRINT_REGEX(sha1, tt) => byBase32Sha1(sha1)
+		case _ => null
 	}
 	
 	/**
