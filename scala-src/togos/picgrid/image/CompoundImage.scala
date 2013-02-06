@@ -25,6 +25,7 @@ class CompoundImageComponent(
 class CompoundImage(
 	val width:Int, val height:Int,
 	val components:Seq[CompoundImageComponent],
+	val title:String,
 	val promotedImage1Uri:String,
 	val promotedImage2Uri:String,
 	val generatedFromUri:String,
@@ -39,6 +40,9 @@ class CompoundImage(
 		sb.append("COMPOUND-IMAGE "+width+","+height+"\n")
 		if( promotedImage1Uri != null ) {
 			sb.append("PROMOTE1 "+promotedImage1Uri+"\n")
+		}
+		if( title != null ) {
+			sb.append("TITLE '"+StringEscape(title)+"'\n")
 		}
 		if( promotedImage2Uri != null ) {
 			sb.append("PROMOTE2 "+promotedImage2Uri+"\n")
@@ -61,13 +65,14 @@ class CompoundImage(
 		sb.toString()
 	}
 	
-	def withoutMetadata = new CompoundImage( width, height, components, null, null, null, -1, -1, null )
+	def withoutMetadata = new CompoundImage( width, height, components, null, null, null, null, -1, -1, null )
 	
 	lazy val graphicUrn = "urn:sha1:"+DigestUtil.sha1Base32(withoutMetadata.serialize())
 }
 object CompoundImage
 {
 	val CI_LINE        = """^COMPOUND-IMAGE (\d+),(\d+)$""".r
+	val TITLE_LINE     = """^TITLE '((?:[^'\\]|\\.)*)'$""".r
 	val PROMOTE1_LINE  = """^PROMOTE1 (\S+)$""".r
 	val PROMOTE2_LINE  = """^PROMOTE2 (\S+)$""".r
 	val COMPONENT_LINE = """^COMPONENT (\d+),(\d+),(\d+),(\d+) (\S+)(?:\s+name='((?:[^'\\]|\\.)*)')?$""".r
@@ -82,6 +87,7 @@ object CompoundImage
 		var line = br.readLine()
 		var width,height = 0
 		var components = new ListBuffer[CompoundImageComponent]()
+		var title:String = null
 		var promotedImage1Uri, promotedImage2Uri : String = null
 		var totalImageCount = -1
 		var totalByteCount  = -1l
@@ -96,6 +102,8 @@ object CompoundImage
 					totalImageCount = c.toInt
 				case SIZE_LINE(c) =>
 					totalByteCount = c.toLong
+				case TITLE_LINE(StringEscape(c)) =>
+				     	title = c
 				case PROMOTE1_LINE(uri) =>
 					promotedImage1Uri = uri
 				case PROMOTE2_LINE(uri) =>
@@ -113,7 +121,7 @@ object CompoundImage
 			}
 			line = br.readLine()
 		}
-		new CompoundImage( width, height, components.toList, promotedImage1Uri, promotedImage2Uri, generatedFromUri, totalImageCount, totalByteCount, generatorInfo )
+		new CompoundImage( width, height, components.toList, title, promotedImage1Uri, promotedImage2Uri, generatedFromUri, totalImageCount, totalByteCount, generatorInfo )
 	}
 	
 	implicit def compoundImageAsBlob( i:CompoundImage ):ByteBlob = i.serialize()

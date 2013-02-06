@@ -73,7 +73,7 @@ class Gridifier(
 			if( c.y + c.height > height ) height = c.y + c.height
 		}
 		
-		val ci = new CompoundImage( width, height, components, null, null, generatedFromUri, totalImageCount, totalByteCount, layout.layouter.cacheString )
+		val ci = new CompoundImage( width, height, components, null, null, null, generatedFromUri, totalImageCount, totalByteCount, layout.layouter.cacheString )
 		
 		val uri = datastore.store( ci.serialize() )
 		new ImageEntry( name, new ImageInfo( uri, generatedFromUri, ci.width, ci.height, ci.totalImageCount, ci.totalByteCount ) )

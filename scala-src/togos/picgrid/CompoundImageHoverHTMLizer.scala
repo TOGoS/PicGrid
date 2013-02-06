@@ -31,7 +31,10 @@ class CompoundImageHoverHTMLizer(
 	val borderWidth = 1
 	
 	def header( ciUri:String, ci:CompoundImage ) = {
-		val titleBlock = if( ci.generatedFromUri != null ) {
+		// TODO: HTML-escape stuff!
+		val titleBlock = if( ci.title != null ) {
+			"<title>" + ci.title + "</title>"
+		} else if( ci.generatedFromUri != null ) {
 			"<title>Image grid for " + ci.generatedFromUri + "</title>"
 		} else {
 			null
