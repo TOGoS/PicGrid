@@ -55,8 +55,8 @@ class CompoundImageRasterizer(
 	def aspectRatio( w:Int, h:Int ) = w.toFloat / h
 	
 	def rasterize( ci:CompoundImage ):String = {
-		if( ci.components.length == 1 ) {
-			return rasterize( ci.components.head.uri )
+		if( ci.equivalentImageUri != null ) {
+			return rasterize( ci.equivalentImageUri )
 		}
 		
 		// http://www.imagemagick.org/Usage/layers/

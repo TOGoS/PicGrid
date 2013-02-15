@@ -67,6 +67,21 @@ class CompoundImage(
 	
 	def withoutMetadata = new CompoundImage( width, height, components, null, null, null, null, -1, -1, null )
 	
+	/**
+	 * If this compound image's content is exactly equivalent to
+	 * that of a simpler image (i.e. the image of a sole component
+	 * that exactly fills the entire space), returns the URI of that
+	 * image.  Otherwise returns null.
+	 *
+	 * Metadata, pixel size, and aspect ratio may be different.
+	 * It's only really 'equivalent' if those are ignored.
+	 */
+	def equivalentImageUri = if(
+		components.length == 1 &&
+		components.head.width == width && components.head.height == height &&
+		components.head.x == 0 && components.head.y == 0
+	) components.head.uri else null
+	
 	lazy val graphicUrn = "urn:sha1:"+DigestUtil.sha1Base32(withoutMetadata.serialize())
 }
 object CompoundImage
