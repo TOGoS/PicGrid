@@ -8,7 +8,7 @@ CLASSPATH=$CLASSPATH:/home/stevens/ext-apps/eclipse-3.7/plugins/org.junit_3.8.2.
 # point SCALA_HOME to Scala home (might want to add it to your project as well)  
 #export SCALA_HOME=lib-tools/scala-2.8.0
 #export SCALA_HOME=/home/stevens/ext-apps/scala-2.9.1.final
-export SCALA_HOME=/home/stevens/ext-apps/scala-2.10.0-M7
+export SCALA_HOME=/home/stevens/ext-apps/scala-2.10.1-RC1
  
 # java opts for your compilation server
 export JAVA_OPTS="-client -Xmx1024M -Xms256M -XX:PermSize=128m -Xss2M -XX:MaxPermSize=256m -Xverify:none -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled"
@@ -19,7 +19,7 @@ mkdir -p $DEST
 JAVAC_CMD=javac.cmd
 echo "-classpath $CLASSPATH:bin" > $JAVAC_CMD
 echo "-d $DEST -deprecation" >> $JAVAC_CMD
-find java-src java-test -name *.java >> $JAVAC_CMD
+find java-src -name *.java >> $JAVAC_CMD
 
 javac @$JAVAC_CMD
 
@@ -29,3 +29,5 @@ echo "-d $DEST -deprecation" >> $SCALAC_CMD
 find java-src java-test scala-src -name *.java -o -name *.scala >> $SCALAC_CMD
  
 time $SCALA_HOME/bin/scalac @$SCALAC_CMD
+
+# proguard @PicGrid.pro

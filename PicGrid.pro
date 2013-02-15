@@ -38,9 +38,10 @@
 
 -injars bin
 -injars resources
--injars /home/stevens/ext-apps/eclipse-3.7-scala-2.1/configuration/org.eclipse.osgi/bundles/208/1/.cp/lib/scala-library.jar(!META-INF/MANIFEST.MF)
--libraryjars /home/stevens/ext-apps/eclipse-3.7-scala-2.1/plugins/org.junit_3.8.2.v3_8_2_v20100427-1100/junit.jar(!META-INF/MANIFEST.MF)
--libraryjars /usr/lib/jvm/java-6-openjdk-i386/jre/lib/rt.jar
+-injars ext-lib/scala-library.jar(!META-INF/MANIFEST.MF)
+#-injars /home/stevens/ext-apps/eclipse-3.7-scala-2.1/configuration/org.eclipse.osgi/bundles/208/1/.cp/lib/scala-library.jar(!META-INF/MANIFEST.MF)
+#-libraryjars /home/stevens/ext-apps/eclipse-3.7-scala-2.1/plugins/org.junit_3.8.2.v3_8_2_v20100427-1100/junit.jar(!META-INF/MANIFEST.MF)
+-libraryjars ext-lib/rt.jar(!META-INF/MANIFEST.MF)
 
 -outjar PicGrid.jar
 
