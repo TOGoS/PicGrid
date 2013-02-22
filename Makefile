@@ -30,7 +30,7 @@ ext-lib/proguard.jar:
 	find java-src java-test scala-src -name *.java -o -name *.scala >> $@
 
 bin: .picgrid-javac.cmd .picgrid-scalac.cmd ext-lib/scala-everything.jar
-	mkdir bin
+	mkdir -p bin
 	javac @.picgrid-javac.cmd
 	java -cp ext-lib/scala-everything.jar scala.tools.nsc.Main @.picgrid-scalac.cmd
 
