@@ -5,6 +5,8 @@ rt_jar_urn               := urn:bitprint:QTSCSZTEFHMDN4HJVC55TBRGSP4IT44L.ODXTBE
 
 src_dirs = java-src java-test scala-src scala-test
 
+.PHONY: all clean
+
 all: PicGrid.jar
 
 clean:
