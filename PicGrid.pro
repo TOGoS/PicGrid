@@ -16,8 +16,10 @@
 
 -outjar PicGrid.jar
 
-# -keep class togos.**
-# -keep class togos.** { *; }
+# It seems these are necessary for some update(...) methods
+# to be included.
+-keep class togos.**
+-keep class togos.** { *; }
 
 # Notes are useless because we are not obfuscating anything:
 -dontnote
