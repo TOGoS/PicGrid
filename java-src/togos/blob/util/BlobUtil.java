@@ -1,9 +1,12 @@
 package togos.blob.util;
 
+import java.io.InputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import togos.blob.ByteBlob;
 import togos.blob.ByteChunk;
+import togos.blob.InputStreamable;
 
 public class BlobUtil
 {
@@ -22,6 +25,14 @@ public class BlobUtil
 			return new String( arr, offset, len, "UTF-8" );
 		} catch( UnsupportedEncodingException e ) {
 			throw new RuntimeException(e);
+		}
+	}
+	
+	public static final InputStream inputStream( ByteBlob b ) throws IOException {
+		if( b instanceof InputStreamable ) {
+			return ((InputStreamable)b).inputStream();
+		} else {
+			return new ByteBlobInputStream(b.chunkIterator());
 		}
 	}
 	

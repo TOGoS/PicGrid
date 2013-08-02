@@ -3,7 +3,7 @@ package togos.picgrid.image
 import java.awt.image.BufferedImage
 import java.lang.Integer
 import javax.imageio.ImageIO
-import togos.blob.util.ByteBlobInputStream
+import togos.blob.util.BlobUtil
 import togos.picgrid.BetterByteArrayOutputStream
 import togos.picgrid.BlobAutoStore
 import togos.blob.SingleChunkByteBlob
@@ -15,7 +15,7 @@ class CrapResizer extends ImageResizer
 	def load( origUri:String ):BufferedImage = {
 		val data = datastore(origUri);
 		if( data == null ) return null
-		val is = new ByteBlobInputStream(data.chunkIterator())
+		val is = BlobUtil.inputStream(data)
 		ImageIO.read(is)
 	}
 	

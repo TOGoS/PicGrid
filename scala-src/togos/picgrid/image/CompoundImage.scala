@@ -7,7 +7,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.lang.Integer
 
-import togos.blob.util.ByteBlobInputStream
+import togos.blob.util.BlobUtil
 import togos.blob.ByteBlob
 import togos.picgrid.BlobConversions.stringAsByteBlob
 import togos.picgrid.util.StringEscape
@@ -98,7 +98,7 @@ object CompoundImage
 	val OTHER_GENERATOR_LINE = """^GENERATOR-INFO (\S+)$""".r
 	
 	def unserialize( b:ByteBlob ):CompoundImage = {
-		val br = new BufferedReader( new InputStreamReader( new ByteBlobInputStream(b.chunkIterator()) ) )
+		val br = new BufferedReader( new InputStreamReader( BlobUtil.inputStream(b) ) )
 		var line = br.readLine()
 		var width,height = 0
 		var components = new ListBuffer[CompoundImageComponent]()

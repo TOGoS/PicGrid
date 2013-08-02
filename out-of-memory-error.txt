@@ -31,3 +31,20 @@ Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
         at scala.collection.immutable.List.foreach(List.scala:318)
         at scala.Function0$class.map(Function0.scala:244)
         at scala.collection.AbstractTraversable.map(Traversable.scala:105)
+
+1. This seems to have been caused (or at least exacerbated) by
+   converting input streams to InputStreamChunkIterators and back
+   using ByteBlobInputStreams.
+
+   Replacing that mess with BlobUtil.inputStream which can avoid the
+   double-conversion when the blob implements InputStreamable in a
+   straightforward way caused the error to show up somewhere else.
+
+2. ImageReaders were not being explicitly closed and are not
+   automatically garbage-collected due to native resource links.
+   
+   Alterering ImageInfoExtractor to close ImageReaders (and related
+   ImageInputStreams, though I'm not sure if that part was necessary)
+   seems to have cleared this up.  Thing now runs for long periods
+   taking <5MB, not including short-lived objects waiting for
+   reclaimation (it appears, looking at VisualVM).

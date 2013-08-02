@@ -7,7 +7,7 @@ import javax.imageio.ImageReader
 import togos.blob.ByteBlob
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.Map
-import togos.blob.util.ByteBlobInputStream
+import togos.blob.util.BlobUtil
 import togos.picgrid.BlobConversions._
 import togos.picgrid.BlobSource
 import togos.picgrid.FunctionCache
@@ -51,20 +51,31 @@ object ImageInfoExtractor
 		return null
 	}
 	
-	def extractImageDimensions( inputStream:InputStream, formatName:String ):(Int,Int) = {
+	def extractImageDimensions( blob:ByteBlob, formatName:String ):(Int,Int) = {
 		val readerIter = ImageIO.getImageReadersByFormatName(formatName)
 		if( readerIter.hasNext() ) {
 			val reader = readerIter.next().asInstanceOf[ImageReader]
-			reader.setInput(new MemoryCacheImageInputStream(inputStream))
-			val w = reader.getWidth(reader.getMinIndex())
-			val h = reader.getHeight(reader.getMinIndex())
-			return (w,h)
+			val inputStream = BlobUtil.inputStream(blob)
+			try {
+				val iis = ImageIO.createImageInputStream(inputStream)
+				try {
+					reader.setInput(iis)
+					val w = reader.getWidth(reader.getMinIndex())
+					val h = reader.getHeight(reader.getMinIndex())
+					return (w,h)
+				} finally {
+					reader.dispose()
+					iis.close()
+				}
+			} finally {
+				inputStream.close()
+			}
 		}
 		return (0,0)
 	}
 	
 	def extractMagicNumber( blob:ByteBlob ):Array[Byte] = {
-		val inputStream1 = new ByteBlobInputStream(blob.chunkIterator())
+		val inputStream1 = BlobUtil.inputStream(blob)
 		val magic = new Array[Byte](8)
 		inputStream1.read( magic )
 		inputStream1.close()
@@ -116,9 +127,7 @@ class ImageInfoExtractor( val imageDimensionCache:FunctionCache, val datastore:B
 				return null
 			}
 			
-			val inputStream = new ByteBlobInputStream(imageBlob.chunkIterator())
-			dims = extractImageDimensions(inputStream, format.name)
-			inputStream.close()
+			dims = extractImageDimensions(imageBlob, format.name)
 			dimensionCache(imageUri) = dims
 		}
 		dims

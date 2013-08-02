@@ -2,14 +2,16 @@ package togos.picgrid.file;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.util.Iterator;
 
 import togos.blob.ByteBlob;
+import togos.blob.InputStreamable;
 import togos.blob.util.BlobUtil;
 import togos.blob.util.InputStreamChunkIterator;
 
-public class FileBlob implements ByteBlob
+public class FileBlob implements ByteBlob, InputStreamable
 {
 	File file;
 	
@@ -23,11 +25,14 @@ public class FileBlob implements ByteBlob
 	
 	public Iterator chunkIterator() {
 		try {
-			FileInputStream fis = new FileInputStream(file);
-			return new InputStreamChunkIterator( fis );
+			return new InputStreamChunkIterator( inputStream() );
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public InputStream inputStream() throws IOException {
+		return new FileInputStream(file);
 	}
 	
 	public long getSize() {

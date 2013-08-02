@@ -2,13 +2,14 @@ package togos.picgrid;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import togos.blob.ByteBlob;
 import togos.blob.SimpleByteChunk;
 import togos.blob.SingleChunkByteBlob;
-import togos.blob.util.ByteBlobInputStream;
+import togos.blob.util.BlobUtil;
 
 public class SerializationUtil
 {
@@ -25,16 +26,18 @@ public class SerializationUtil
 	}
 	
 	public static Object unserialize( ByteBlob b ) {
-		ByteBlobInputStream bbis = new ByteBlobInputStream(b.chunkIterator());
-		
+		InputStream bbis = null;
 		try {
+			bbis = BlobUtil.inputStream(b);
 			return new ObjectInputStream( bbis ).readObject();
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		} catch( ClassNotFoundException e ) {
 			throw new RuntimeException(e);
 		} finally {
-			try { bbis.close(); } catch( IOException e ) { throw new RuntimeException(e); }
+			if( bbis != null ) {
+				try { bbis.close(); } catch( IOException e ) { throw new RuntimeException(e); }
+			}
 		}
 	}
 }
