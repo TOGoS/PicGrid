@@ -8,7 +8,7 @@ src_dirs = java-src java-test scala-src scala-test
 
 cc_checkout = ccouch checkout
 
-.PHONY: all clean
+.PHONY: all bin clean
 
 all: PicGrid.jar
 
