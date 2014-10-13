@@ -6,7 +6,12 @@ junit_jar_urn            := urn:bitprint:TEJJ6FSEFBCPNJFBDLRC7O7OICYU252P.XZMJNN
 
 src_dirs = java-src java-test scala-src scala-test
 
-cc_checkout = ccouch checkout
+fetch = java -jar util/TJFetcher.jar \
+	-debug \
+	-repo robert.nuke24.net \
+	-repo fs.marvin.nuke24.net \
+	-repo pvps1.nuke24.net \
+	-repo localhost
 
 .PHONY: all bin clean
 
@@ -16,15 +21,15 @@ clean:
 	rm -rf bin ext-lib PicGrid.jar .*.touchfile .*.cmd
 
 ext-lib/rt.jar:
-	${cc_checkout} ${rt_jar_urn}  $@
+	${fetch} ${rt_jar_urn} -o $@
 ext-lib/scala-library.jar:
-	${cc_checkout} ${scala_library_jar_urn} $@
+	${fetch} ${scala_library_jar_urn} -o $@
 ext-lib/scala-everything.jar:
-	${cc_checkout} ${scala_everything_jar_urn} $@
+	${fetch} ${scala_everything_jar_urn} -o $@
 ext-lib/proguard.jar:
-	${cc_checkout} ${proguard_jar_urn} $@
+	${fetch} ${proguard_jar_urn} -o $@
 ext-lib/junit-3.8.1.jar:
-	${cc_checkout} ${junit_jar_urn} $@
+	${fetch} ${junit_jar_urn} -o $@
 
 .picgrid-javac.cmd:
 	echo '' -classpath bin:ext-lib/junit-3.8.1.jar > $@
