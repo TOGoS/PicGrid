@@ -1,7 +1,8 @@
 # PicGrid
 
 Packs directories full of pictures such that each directory is
-represented as an a view of all its contents.
+represented its contents (including subdirectories) packed into a
+rectangle.
 
 Example output:
 http://pix.nuke24.net/uri-res/raw/urn:bitprint:ZUSSZNX5QOYJZM4VPBUNYJ5WBZH67TBT.NCYZ74FYVFHXXIWLMWAQ5ZQOA4LBENMLSI3ULVA/Travel.html
