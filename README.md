@@ -1,8 +1,8 @@
 # PicGrid
 
-Packs directories full of pictures such that each directory is
-represented its contents (including subdirectories) packed into a
-rectangle.
+Transforms directories full of pictures into recursive structures
+where each directory is represented by a picture of its contents
+packed into a rectangle.
 
 Example output:
 http://pix.nuke24.net/uri-res/raw/urn:bitprint:ZUSSZNX5QOYJZM4VPBUNYJ5WBZH67TBT.NCYZ74FYVFHXXIWLMWAQ5ZQOA4LBENMLSI3ULVA/Travel.html
