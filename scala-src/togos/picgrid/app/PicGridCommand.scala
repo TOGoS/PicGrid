@@ -1,17 +1,21 @@
 package togos.picgrid.app
 
-import togos.picgrid.webserver.WebServer
-import togos.mf.api.Callable
-import togos.mf.api.Response
-import togos.mf.api.Request
+import java.io.File
+import org.bitpedia.util.Base32
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.TraversableLike
 import togos.blob.ByteBlob
-import togos.mf.base.BaseResponse
-import togos.picgrid.image.ImageInfoExtractor
+import togos.blob.ByteChunk
+import togos.mf.api.Callable
+import togos.mf.api.Response
+import togos.mf.api.Request
 import togos.mf.api.ResponseCodes
+import togos.mf.base.BaseResponse
+import togos.picgrid.BitprintDigest
+import togos.picgrid.file.FileBlob
 import togos.picgrid.file.FSSHA1Datastore
-import java.io.File
+import togos.picgrid.image.ImageInfoExtractor
+import togos.picgrid.webserver.WebServer
 
 class WebPathToURNSourceAdapter( val source:(String=>ByteBlob) ) extends (String=>ByteBlob)
 {
@@ -35,6 +39,45 @@ class BlobFunctionCallable( val blobFunction:(String=>ByteBlob) ) extends Callab
 		val fmt = ImageInfoExtractor.extractImageType(b)
 		val ct = if( fmt == null ) null else fmt.mimeType;
 		new BaseResponse( ResponseCodes.NORMAL, b, ct )
+	}
+}
+
+object IDCommand
+{
+	def identify( f:File ):String = {
+		val digestor = new BitprintDigest()
+		val chunkIter = new FileBlob(f).chunkIterator()
+		while(chunkIter.hasNext()) {
+			val chunk:ByteChunk = chunkIter.next().asInstanceOf[ByteChunk]
+			digestor.update(chunk.getBuffer(), chunk.getOffset(), chunk.getSize())
+		}
+		val hash = digestor.digest
+		val sha1Hash = new Array[Byte](20)
+		System.arraycopy(hash, 0, sha1Hash, 0, 20);
+		val tigerTreeHash = new Array[Byte](24);
+		System.arraycopy(hash, 20, tigerTreeHash, 0, 24);
+		val sha1String = Base32.encode(sha1Hash)
+		return "urn:bitprint:" + sha1String + "." + Base32.encode(tigerTreeHash)
+	}
+
+	def usage( cmdName:String ) =
+		"Usage: "+cmdName+" <file> ...\n" +
+		"\n" +
+		"Prints out hashes of named files."
+
+	def main( args:Array[String] ) {
+		for( arg <- args ) {
+			if( "-?" == arg ) {
+				System.out.println(usage("id"))
+				System.exit(0)
+			}
+		}
+		for( arg <- args ) {
+			if( args.length > 1 ) {
+				System.out.print(arg + "\t")
+			}
+			System.out.println(identify(new File(arg)))
+		}
 	}
 }
 
@@ -106,6 +149,7 @@ object PicGridCommand {
 		"Sub-commands:\n" +
 		"  compose\n" +
 		"  webserve\n" +
+		"  id\n" +
 		"Run '<subcommand> -?' for help with specific commands."
 	
 	def main( args:Array[String] ) {
@@ -122,6 +166,8 @@ object PicGridCommand {
 			ComposeCommand.main("picgrid compose", subCmdArgs)
 		case "webserve" =>
 			WebServerCommand.main(subCmdArgs)
+		case "id" =>
+			IDCommand.main(subCmdArgs)
 		case "-?" | "-h" | "-help" | "--help" =>
 			System.out.println(USAGE)
 		case _ =>

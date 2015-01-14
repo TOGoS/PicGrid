@@ -13,9 +13,9 @@ fetch = java -jar util/TJFetcher.jar \
 	-repo pvps1.nuke24.net \
 	-repo localhost
 
-.PHONY: all bin clean
+.PHONY: default clean
 
-all: PicGrid.jar
+default: PicGrid.jar.urn
 
 clean:
 	rm -rf bin ext-lib PicGrid.jar .*.touchfile .*.cmd
@@ -31,12 +31,12 @@ ext-lib/proguard.jar:
 ext-lib/junit-3.8.1.jar:
 	${fetch} ${junit_jar_urn} -o $@
 
-.picgrid-javac.cmd:
+.picgrid-javac.cmd: $(shell find java-src -name *.java)
 	echo '' -classpath bin:ext-lib/junit-3.8.1.jar > $@
 	echo '' -d bin -deprecation >> $@
 	find java-src java-test -name *.java >> $@
 
-.picgrid-scalac.cmd:
+.picgrid-scalac.cmd: $(shell find java-src scala-src -name *.java -o -name *.scala)
 	echo '' -classpath bin:ext-lib/scala-everything.jar:bin/rt.jar > $@
 	echo '' -d bin -deprecation >> $@
 	find java-src java-test scala-src -name *.java -o -name *.scala >> $@
@@ -45,6 +45,10 @@ bin: .picgrid-javac.cmd .picgrid-scalac.cmd ext-lib/junit-3.8.1.jar ext-lib/scal
 	mkdir -p bin
 	javac @.picgrid-javac.cmd
 	java -cp ext-lib/scala-everything.jar scala.tools.nsc.Main @.picgrid-scalac.cmd
+	touch "$@"
 
 PicGrid.jar: bin ext-lib/proguard.jar ext-lib/rt.jar ext-lib/scala-library.jar PicGrid.pro
 	java -jar ext-lib/proguard.jar @PicGrid.pro
+
+%.urn: % PicGrid.jar
+	java -jar PicGrid.jar id "$<" >"$@"
