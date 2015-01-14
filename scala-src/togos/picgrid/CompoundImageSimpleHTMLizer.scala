@@ -15,14 +15,14 @@ class CompoundImageSimpleHTMLizer(
 	val gridRenderer:(String=>String),
 	val referencedUriCallback:(String=>Unit)
 ) extends (String=>String) {
-	val generatorVersion = 3
+	val generatorVersion = 5
 	val generatorId = "simple-htmlize-v"+generatorVersion
 	def imageCacheKey( imageUri:String ) = generatorId+":"+imageUri
 	
 	def url( urn:String, name:String ):String = {
 		assert( urn != null )
 		referencedUriCallback(urn)
-		"../" + uriEncodePathSegment(urn) + "/" + uriEncodePathSegment(if(name != null) name else urn)
+		"../" + uriEncodePathSegment(urn) + "/" + uriEncodePathSegment(if(name != null) name.replace('/','-') else urn)
 	}
 	
 	def header( ciUri:String, ci:CompoundImage ) = {

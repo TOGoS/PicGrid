@@ -52,7 +52,7 @@ class Gridifier(
 	
 	def gridify( images:Seq[ImageEntry], name:String, generatedFromUri:String ):ImageEntry = {
 		if( images.length == 0 ) return null
-		if( images.length == 1 ) return images.head
+		if( images.length == 1 ) return new ImageEntry( name+"/"+images.head.name, images.head.info );
 		
 		val layout = layouter.layout( images )
 		val components = for( c <- layout.cells ) yield new CompoundImageComponent(
@@ -90,7 +90,8 @@ class Gridifier(
 		Base32.encode(sha1Hash)
 	}
 	
-	lazy val configHash = layouter.cacheString
+	def version = 2
+	lazy val configHash = "gridifier-v"+version+"-"+layouter.cacheString
 	
 	/**
 	 * Name is theoretically not needed, but is
