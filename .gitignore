@@ -3,10 +3,10 @@
 .project
 .settings
 .scala_dependencies
+ext-lib
 junk
-bin
 *.jpg
 *.png
 *.cmd
 PicGrid.jar
-ext-lib
+target

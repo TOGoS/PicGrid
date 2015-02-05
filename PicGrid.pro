@@ -8,7 +8,7 @@
     ** MODULE$;
 }
 
--injars bin
+-injars target/scala-2.10/classes
 -injars resources
 -injars ext-lib/scala-library.jar(!META-INF/MANIFEST.MF)
 -libraryjars ext-lib/rt.jar(!META-INF/MANIFEST.MF)
