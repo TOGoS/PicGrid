@@ -5,7 +5,7 @@ where each directory is represented by a picture of its contents
 packed into a rectangle.
 
 Example output:
-http://pix.nuke24.net/uri-res/raw/urn:bitprint:ZUSSZNX5QOYJZM4VPBUNYJ5WBZH67TBT.NCYZ74FYVFHXXIWLMWAQ5ZQOA4LBENMLSI3ULVA/Travel.html
+http://picture-files.nuke24.net/uri-res/raw/urn:bitprint:ZUSSZNX5QOYJZM4VPBUNYJ5WBZH67TBT.NCYZ74FYVFHXXIWLMWAQ5ZQOA4LBENMLSI3ULVA/Travel.html
 
 It takes as input RDF+XML representations of directories as created by
 ContentCouch and also stores the results into a ContentCouch repository.
