@@ -77,7 +77,7 @@ class CompoundImageRasterizer(
 		var compList = ci.components
 		while( compList.length > 0 ) {
 			val destFile = datastore.tempFile(".jpg")
-			val args = ArrayBuffer[String]( "-size", ci.width + "x" + ci.height, currentImage )
+			val args = ArrayBuffer[String]( "-filter", "Box", "-size", ci.width + "x" + ci.height, currentImage )
 			var argLen = 256
 			while( compList.length > 0 && argLen < maxCmdLength ) {
 				val comp = compList.head
@@ -115,4 +115,12 @@ class CompoundImageRasterizer(
 		
 		datastore.storeAndRemove(currentFile)
 	}
+}
+object CompoundImageRasterizer {
+	/**
+	 * If rasterization functionally changes in any way
+	 * (change interpolation for up/downscaling, change file format, etc),
+	 * you have to increase this number.
+	 */
+	val version = 2
 }

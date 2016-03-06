@@ -18,8 +18,17 @@ class ImageMagickResizer( val functionCache:FunctionCache, val datastore:FSDatas
 	
 	def resize( infile:File, newWidth:Int, newHeight:Int, outFile:File ):Process = {
 		makeParentDirs( outFile )
+		// "The 'Box' filter setting is exactly the same as 'point' with one slight variation.
+		// When shrinking images it will average, and merge the pixels together.
+		// The smaller the resulting image the more pixels will be averaged together."
+		// -- https://www.imagemagick.org/Usage/filter/
+		// WHICH IS WHAT I WANT, NOT THIS BLURRY CRAP WHEN UPSCALING!
+		// Also, if you change this stuff, be sure to update ImageMagickCropResizer, too.
+		// And CompoundImageRasterizer.  It's got some imagemagick commands in it, too.
+		val filter = "Box";
 		val args = Array[String](
 			infile.getPath(),
+			"-filter",filter,
 			"-thumbnail",(newWidth+"x"+newHeight+">"),
 			"-quality","85",
 			outFile.getPath()

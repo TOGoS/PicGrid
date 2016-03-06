@@ -49,6 +49,7 @@ class ImageMagickCropResizer( val datastore:FSDatastore, val imConvert:CommandLi
 	
 	def imArgs( infile:File, newWidth:Int, newHeight:Int, outFile:File ) = Array[String](
 		infile.getPath(),
+		"-fKilter","Box", // See note in ImageMagickResizer
 		"-thumbnail",(newWidth+"x"+newHeight+"^"),
 		"-gravity","Center",
 		"-extent",(newWidth+"x"+newHeight),

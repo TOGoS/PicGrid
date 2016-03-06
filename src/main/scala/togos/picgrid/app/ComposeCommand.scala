@@ -193,10 +193,20 @@ object ComposeCommand
 			System.out.println( compoundImageUri )
 		}
 		
-		//// Rasterize
+		val rasterizationCacheSuffix = if( CompoundImageRasterizer.version == 1 ) {
+			""
+		} else {
+			"-rastv"+CompoundImageRasterizer.version
+		}
 		
+		val rasterizationCacheFile = "rasterize"+rasterizationCacheSuffix
+		val htmlizationCacheFile = "htmlization"+rasterizationCacheSuffix
+		// Variations on HTMLization are handled using different keys within
+		// that file.
+		
+		//// Rasterize
 		val rasterizer:(String=>String) = new CompoundImageRasterizer(
-			getCache(functionCacheDir, "rasterize"), datastore,
+			getCache(functionCacheDir, rasterizationCacheFile), datastore,
 			imageInfoExtractor, resizer, ImageMagickCommands.convert )
 		
 		val rasterizationUri = rasterizer( compoundImageUri )
@@ -215,10 +225,10 @@ object ComposeCommand
 		
 		val htmlizer:(String=>String) = pageStyle match {
 			case "simple" => new CompoundImageSimpleHTMLizer(
-				getCache(functionCacheDir, "htmlization"), datastore,
+				getCache(functionCacheDir, htmlizationCacheFile), datastore,
 				imageInfoExtractor, rasterizer, resourceLogger )
 			case "hover" => new CompoundImageHoverHTMLizer(
-				getCache(functionCacheDir, "htmlization"), datastore,
+				getCache(functionCacheDir, htmlizationCacheFile), datastore,
 				imageInfoExtractor, rasterizer, resourceLogger )
 			case _ =>
 				System.err.println("Unrecognised page style: '"+pageStyle+"'")
