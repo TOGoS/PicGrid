@@ -4,6 +4,8 @@ Transforms directories full of pictures into recursive structures
 where each directory is represented by a picture of its contents
 packed into a rectangle.
 
+![For example, this directory of mushroom pictures](http://picture-files.nuke24.net/uri-res/raw/urn:bitprint:TL6JFRX2TOGYQQFNU7S7OEKZ5E7V5IX7.MO4VQTEUYYTT4JCZ5VWXAY2QJ4MYXRYA7XNJ4LI/Mushrooms.jpg)
+
 Example output:
 http://picture-files.nuke24.net/uri-res/raw/urn:bitprint:ZUSSZNX5QOYJZM4VPBUNYJ5WBZH67TBT.NCYZ74FYVFHXXIWLMWAQ5ZQOA4LBENMLSI3ULVA/Travel.html
 
