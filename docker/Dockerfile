@@ -17,4 +17,4 @@ RUN make -C /opt/src/PicGrid PicGrid.jar PicGrid.jar.urn
 FROM openjdk:7-jdk-alpine AS picgrid
 
 COPY --from=build /opt/src/PicGrid/PicGrid.jar /opt/bin/PicGrid.jar
-ENTRYPOINT ["java", "/opt/bin/PicGrid.jar"]
+ENTRYPOINT ["java", "-jar", "/opt/bin/PicGrid.jar"]
