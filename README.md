@@ -17,3 +17,12 @@ PicGrid will cache the output from each directory so that re-running
 after e.g. adding one picture to one subdirectory of a 10GB photo
 collection will not use any additional time or disk space for branches
 of the directory tree that have not changed.
+
+## Building
+
+The build process for this project is mostly self-contained
+(see [the Makefile](./Makefile)),
+but requires a relatively old version of Java to support the
+old version of Scala that's used.
+
+Tested with Java 1.7.0_171.
