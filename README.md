@@ -27,7 +27,7 @@ The build process for this project is mostly self-contained
 but requires a relatively old version of Java (such as 1.7.0)
 to support the old version of Scala that's used.
 
-See ```[docker](./docker)/``` for building using a Dockerized build environment
+See [```docker/```](./docker) for building using a Dockerized build environment
 and/or building a PicGrid docker container.
 
 Or just ```docker run togos/picgrid:latest```.
