@@ -1,9 +1,10 @@
-/docker
-/doc
 /builder
+/doc
+/docker
 /PicGrid.jar
 /PicGrid.jar.urn
 /PicGrid-maude.pro
 /README.md
+/TODO.md
 /.*
 *.bat
