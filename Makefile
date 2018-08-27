@@ -11,15 +11,15 @@ src_dirs = ${java_src_dirs} ${scala_src_dirs}
 fetch = java -jar util/TJFetcher.jar \
 	-debug \
 	-repo localhost \
-	-repo pvps1.nuke24.net \
+	-repo wherever-files.nuke24.net \
 	-repo fs.marvin.nuke24.net
 
 class_dest_dir = target/scala-2.10/classes
 
-.PHONY: default clean
-
+.PHONY: default
 default: PicGrid.jar.urn
 
+.PHONY: clean
 clean:
 	rm -rf bin ${build_target_dir} ext-lib PicGrid.jar .*.touchfile .*.cmd
 
@@ -33,6 +33,10 @@ ext-lib/proguard.jar:
 	${fetch} ${proguard_jar_urn} -o $@
 ext-lib/junit-3.8.1.jar:
 	${fetch} ${junit_jar_urn} -o $@
+external_libs := ext-lib/rt.jar ext-lib/scala-library.jar ext-lib/scala-everything.jar ext-lib/proguard.jar ext-lib/junit-3.8.1.jar
+
+.PHONY: download-external-libs
+download-external-libs: ${external_libs}
 
 .picgrid-javac.cmd: Makefile $(shell find ${java_src_dirs} -name *.java)
 	echo '' -classpath ${class_dest_dir}:ext-lib/junit-3.8.1.jar > $@

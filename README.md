@@ -22,7 +22,10 @@ of the directory tree that have not changed.
 
 The build process for this project is mostly self-contained
 (see [the Makefile](./Makefile)),
-but requires a relatively old version of Java to support the
-old version of Scala that's used.
+but requires a relatively old version of Java (such as 1.7.0)
+to support the old version of Scala that's used.
 
-Tested with Java 1.7.0_171.
+See ```[docker](./docker)/``` for building using a Dockerized build environment
+and/or building a PicGrid docker container.
+
+Or just ```docker run togos/picgrid:latest```.
