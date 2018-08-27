@@ -1,10 +1,17 @@
+# To-do
+
+- Make sure Docker version *actually works*
+  - Can PicGrid a directory
+  - Can webserve that griddified directory
+  - Make sure Docker container has imagemagick in it
+- Pretty picture for the README
 - New layouter method (see below)
 - Compose should allow filesystem objects to be passed on the command line
   and store them itself (should be able to steal directory serialization code from ccouch3)
 - Include a utility for recursively scanning emitted HTML files for URNs
   and writing them all to STDOUT.
 
-== New layouter ==
+### New layouter
 
 For a given set of images with weights (these weights can
 be assigned arbitrarily), create a single row.
@@ -21,7 +28,7 @@ hold onto those configurations and their fitness values.
 
 Repeat the 2 steps but making columns instead of rows.
 
-= Done =
+# Done
 
 * Layouter that runs both borce and rowly (and any new ones you come up with)
   and picks the most fit layout from all the results.
