@@ -12,6 +12,31 @@
 - Include a utility for recursively scanning emitted HTML files for URNs
   and writing them all to STDOUT.
 
+### Zero-width crash
+
+```
+$ picgrid-compose -layouter borce -page-style hover x-rdf-subject:urn:bitprint:YRLZROF2ZKR5GCAUZ7OBMFWG2NCIO3MB.5ILYDI7K3FLR2YBENH477HYHAINKTMNTWLTGDFA
+Exception in thread "main" java.lang.AssertionError: assertion failed: Cell width is <= 0: togos.picgrid.layout.LayoutCell@1ae53e9
+        at scala.Predef$.assert(Predef.scala:179)
+        at togos.picgrid.layout.AutoSpacingLayouter$$anonfun$layout$1.apply(Layouter.scala:99)
+        at togos.picgrid.layout.AutoSpacingLayouter$$anonfun$layout$1.apply(Layouter.scala:98)
+        at scala.collection.immutable.List.foreach(List.scala:318)
+        at togos.picgrid.layout.AutoSpacingLayouter.layout$4348ff2d(Layouter.scala:98)
+        at togos.picgrid.Gridifier.gridify$35eef3cf(Gridifier.scala:57)
+        at togos.picgrid.Gridifier.gridifyDir$35eef3cf(Gridifier.scala:84)
+        at togos.picgrid.Gridifier.gridifyDir(Gridifier.scala:106)
+        at togos.picgrid.app.ComposeCommand$.main(ComposeCommand.scala:175)
+        at togos.picgrid.app.PicGridCommand$.main(PicGridCommand.scala:166)
+        at togos.picgrid.app.PicGridCommand.main(PicGridCommand.scala)
+```
+
+This seems to be a trouble with the 'borce' layouter, because when using 'rowly'...
+
+```sh
+$ picgrid-compose -layouter rowly -page-style hover x-rdf-subject:urn:bitprint:YRLZROF2ZKR5GCAUZ7OBMFWG2NCIO3MB.5ILYDI7K3FLR2YBENH477HYHAINKTMNTWLTGDFA
+urn:bitprint:6W4PVKPFENWMOKGXCTD5I7WVTFE7NDIG.BTJTX7P4CC4UXLEZH3CL6K5PAW37NLUICWYMZUY
+```
+
 ### New layouter
 
 For a given set of images with weights (these weights can
