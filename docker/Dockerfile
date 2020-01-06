@@ -16,5 +16,6 @@ RUN make -C /opt/src/PicGrid PicGrid.jar PicGrid.jar.urn
 
 FROM openjdk:7-jdk-alpine AS picgrid
 
+RUN apk --update add imagemagick
 COPY --from=build /opt/src/PicGrid/PicGrid.jar /opt/bin/PicGrid.jar
 ENTRYPOINT ["java", "-jar", "/opt/bin/PicGrid.jar"]
