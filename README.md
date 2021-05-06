@@ -30,5 +30,8 @@ to support the old version of Scala that's used.
 
 See [```docker/```](./docker) for building using a Dockerized build environment
 and/or building a PicGrid docker container.
+```make -C docker``` should do the job.
 
-Or just ```docker run togos/picgrid:latest```.
+## To use the latest Docker container
+
+```docker run togos/picgrid:latest```.
