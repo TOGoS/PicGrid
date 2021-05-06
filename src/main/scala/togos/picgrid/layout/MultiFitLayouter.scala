@@ -57,11 +57,11 @@ class MultiFitLayouter( val subLayouters:Seq[Layouter] ) extends Layouter
 		return fitness
 	}
 	
-	def layout( images:Seq[ImageEntry] ):Layout = {
+	def layout( images:Seq[ImageEntry], context:String ):Layout = {
 		var bestFitness = Float.MinValue
 		var mostFit:Layout = null
 		for( l <- subLayouters ) {
-			val cs = l.layout( images )
+			val cs = l.layout( images, context )
 			val fit = fitness(cs.cells)
 			if( fit > bestFitness ) {
 				mostFit = cs

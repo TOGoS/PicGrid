@@ -54,7 +54,7 @@ class Gridifier(
 		if( images.length == 0 ) return null
 		if( images.length == 1 ) return new ImageEntry( name+"/"+images.head.name, images.head.info );
 		
-		val layout = layouter.layout( images )
+		val layout = layouter.layout( images, generatedFromUri )
 		val components = for( c <- layout.cells ) yield new CompoundImageComponent(
 			c.x.toInt, c.y.toInt, c.w.toInt, c.h.toInt,
 			c.entry.info.uri, c.entry.name

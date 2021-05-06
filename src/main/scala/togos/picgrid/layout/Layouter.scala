@@ -16,7 +16,7 @@ trait Layouter
 	 * e.g. bob-v5-640x480  
 	 */
 	def cacheString:String
-	def layout( images:Seq[ImageEntry] ):Layout
+	def layout( images:Seq[ImageEntry], context:String ):Layout
 }
 
 abstract class AutoSpacingLayouter( val maxWidth:Int, val maxHeight:Int ) extends Layouter
@@ -91,17 +91,22 @@ abstract class AutoSpacingLayouter( val maxWidth:Int, val maxHeight:Int ) extend
 	
 	def quantize( cells:Seq[LayoutCell] ):Seq[LayoutCell] = for( c <- cells ) yield quantize(c)
 	
-	def layout( images:Seq[ImageEntry] ):Layout = {
+	def layout( images:Seq[ImageEntry], context:String ):Layout = {
+		if( images.size == 0 ) {
+			System.err.println("Warning: no images in "+context)
+		}
 		val cells = quantize(squish(_gridify( images )))
 		
 		// Sanity checks
+		
 		for( c <- cells ) {
-			assert( c.w > 0               , "Cell width is <= 0: "+c )
-			assert( c.h > 0               , "Cell height is <= 0: "+c )
-			assert( c.x >= 0              , "Cell X pos is < 0: "+c )
-			assert( c.y >= 0              , "Cell Y pos is < 0: "+c )
-			assert( c.x + c.w <= maxWidth , "Cell X+width is > "+maxWidth+": "+c )
-			assert( c.y + c.h <= maxHeight, "Cell Y+height is > "+maxHeight+": "+c )
+			val debugStr = " ("+context+"/"+c.entry.name+")"
+			assert( c.w > 0               , "Cell width is <= 0: "+c+debugStr )
+			assert( c.h > 0               , "Cell height is <= 0: "+c+debugStr )
+			assert( c.x >= 0              , "Cell X pos is < 0: "+c+debugStr )
+			assert( c.y >= 0              , "Cell Y pos is < 0: "+c+debugStr )
+			assert( c.x + c.w <= maxWidth , "Cell X+width is > "+maxWidth+": "+c+debugStr )
+			assert( c.y + c.h <= maxHeight, "Cell Y+height is > "+maxHeight+": "+c+debugStr )
 		}
 		
 		return new Layout( this, cells )
