@@ -84,9 +84,10 @@ abstract class AutoSpacingLayouter( val maxWidth:Int, val maxHeight:Int ) extend
 	
 	def quantize( c:LayoutCell ):LayoutCell = new LayoutCell(
 		c.entry,
-		math.round(c.x), math.round(c.y),
-		math.round(c.w + c.x) - math.round(c.x),
-		math.round(c.h + c.y) - math.round(c.y)
+		math.round(c.x),
+		math.round(c.y),
+		math.max(1, math.round(c.w + c.x) - math.round(c.x)),
+		math.max(1, math.round(c.h + c.y) - math.round(c.y))
 	)
 	
 	def quantize( cells:Seq[LayoutCell] ):Seq[LayoutCell] = for( c <- cells ) yield quantize(c)
