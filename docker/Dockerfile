@@ -2,13 +2,20 @@ FROM openjdk:7-jdk-alpine AS build-environment
 
 RUN apk add make
 
-COPY . /opt/src/PicGrid/
+# For the build environment, copy only util and Makefile
+# so that we can re-use the container in which
+# dependencies have been downloaded:
+COPY util /opt/src/PicGrid/util/
+COPY Makefile /opt/src/PicGrid/Makefile
 
+# Ignore complaints of src/*/jave etc not found.
+# That's for other targets that we're not building.
 RUN make -C /opt/src/PicGrid/ download-external-libs
 
 
-
 FROM build-environment AS build
+
+COPY . /opt/src/PicGrid/
 
 RUN make -C /opt/src/PicGrid PicGrid.jar PicGrid.jar.urn
 
