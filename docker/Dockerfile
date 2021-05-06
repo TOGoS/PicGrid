@@ -15,6 +15,9 @@ RUN make -C /opt/src/PicGrid/ download-external-libs
 
 FROM build-environment AS build
 
+# This should probably be a mounted volume,
+# but I don't know if there's any way to do that entirely within the Dockerfile,
+# so WHATEVER JUST COPY IT IN:
 COPY . /opt/src/PicGrid/
 
 RUN make -C /opt/src/PicGrid PicGrid.jar PicGrid.jar.urn
