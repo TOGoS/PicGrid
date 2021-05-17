@@ -10,3 +10,7 @@ junk
 *.cmd
 PicGrid.jar
 target
+# Emacs junk
+*~
+\#*
+.\#*
