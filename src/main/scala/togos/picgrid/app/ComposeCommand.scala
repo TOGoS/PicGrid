@@ -13,6 +13,7 @@ import togos.picgrid.store.MigratingStore
 import togos.picgrid.FunctionCache
 import togos.picgrid.file.SLFFunctionCache
 import togos.picgrid.file.SLF2FunctionCache
+import togos.picgrid.Logger
 import togos.picgrid.MemoryFunctionCache
 import togos.picgrid.image.ImageMagickCommands
 import togos.picgrid.file.FSSHA1Datastore
@@ -38,6 +39,7 @@ object ComposeCommand
 		"Target is the URN of a directory or compound image to render.\n" +
 		"Options:\n" +
 		"  -v ; be verbose\n" +
+		"  -debug ; dump various info to stderr while running\n" +
 		"  -layouter <name>:<w>x<h> ; specify layout algorithm and maximum size\n" +
 		"  -page-style <name>  ; specify style of HTML pages to be generated\n" +
 		"  -convert-path <exe> ; path to convert.exe\n" +
@@ -81,6 +83,8 @@ object ComposeCommand
 			args(i) match {
 				case "-v" =>
 					verbose = true
+				case "-debug" =>
+					Logger.debuggingEnabled = true
 				case "-layouter" =>
 					i += 1
 					layouterName = args(i)
