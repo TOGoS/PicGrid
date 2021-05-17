@@ -45,3 +45,182 @@ urn:bitprint:6W4PVKPFENWMOKGXCTD5I7WVTFE7NDIG.BTJTX7P4CC4UXLEZH3CL6K5PAW37NLUICW
 [[http://togos-fbs.nuke24.net/uri-res/raw/urn:bitprint:3NSYXDUQ3VY4Q4335RHFAHPUEONNV7O2.4C3BLSHLQ5BUZ6JFPFSRSQYVW2FA6C6OFUTREGQ/someoldpix.html][e.g. lots of these pictures]].
 Let's pick on [[http://togos-fbs.nuke24.net/uri-res/raw/urn:bitprint:ZMBXCX4RTE3JL743IQOCFZBNJ3PDY2WY.OUA7VBJKEZLSTOO6U2W26T2CUXDWCM6X45TKVOY/012843-IMG_7336.JPG][this one]] in particular because it's landscape
 so I figure we won't be worrying about rotation.
+
+Possibilities:
+- imagemagick fails to squish things down that small
+- java fails to load the squished images
+
+*** Let's just run imagemagick on it and see what happens
+
+How to run commands in the docker container?
+
+Here's ~picgrid-compose~ from TOGoSUtils:
+
+#+BEGIN_SRC sh
+if [ -z "${ccouch_repo_dir+x}" ] ; then
+    echo "Please set ccouch_repo_dir" >&2
+    exit 1
+fi
+
+if [ -z "${picgrid_docker_image_name+x}" ] ; then
+    picgrid_docker_image_name=togos/picgrid:latest
+fi
+
+exec docker run \
+       -v "$ccouch_repo_dir":/.ccouch \
+       "$picgrid_docker_image_name" compose \
+       -datastore /.ccouch/data/picgrid \
+       -ms-datasource /.ccouch/data \
+       -page-style hover \
+       -layouter multifit:1024x768 \
+       -function-cache-dir /.ccouch/cache/picgrid \
+       "$@"
+#+END_SRC
+
+I think we gotta add ~-it --entrypoint /bin/bash~.
+
+So maybe like...
+
+#+BEGIN_SRC
+docker run -v /home/tog/.ccouch:/.ccouch -it --entrypoint /bin/sh togos/picgrid:latest
+#+END_SRC
+
+Amd then what command will do the resizing, huh...
+
+#+BEGIN_SRC scala
+			infile.getPath(),
+			"-filter",filter,
+			"-thumbnail",(newWidth+"x"+newHeight+">"),
+			"-quality","85",
+			outFile.getPath()
+#+END_SRC
+
+So like
+
+#+BEGIN_SRC sh
+mkdir -p /.ccouch/temp
+/usr/bin/convert /.ccouch/data/pictures/ZM/ZMBXCX4RTE3JL743IQOCFZBNJ3PDY2WY -filter Box -thumbnail 41x29 -quality 85 /.ccouch/temp/zmbx-41x29.jpg
+#+END_SRC
+
+Result: a 913-byte file that opens just fine in Firefox.
+
+So based on this small bit of evidence, maybe the problem is not converting to the thumbnail.
+
+PicGrid also uses imagemagick to compose the compound images, using a command like...
+
+#+BEGIN_SRC sh
+output_image_size=128x128
+input_image=xc:black
+/usr/bin/convert -filter Box -size $output_image_size $input_image \
+	-draw "image over 88,35 41,29 '/.ccouch/temp/zmbx-41x29.jpg'" \
+	/.ccouch/temp/composite.jpg
+#+END_SRC
+
+It will actually do that in multiple passes,
+writing a new JPG each time,
+to handle very large argument strings.
+Weird and not great!
+
+Anyway, the result of the above command is a 1448-byte file that looks like you'd expect.
+
+What if we give it a bad input path?
+
+#+BEGIN_SRC sh
+output_image_size=128x128
+input_image=xc:black
+/usr/bin/convert -filter Box -size $output_image_size $input_image \
+	-draw "image over 88,35 41,29 '/.ccouch/temp/lololol.jpg'" \
+	/.ccouch/temp/composite-badinput.jpg
+#+END_SRC
+
+Result:
+
+#+BEGIN_EXAMPLE
+convert: unable to open image '/.ccouch/temp/lololol.jpg': No such file or directory @ error/blob.c/OpenBlob/3497.
+convert: non-conforming drawing primitive definition `image' @ error/draw.c/RenderMVGContent/4406.
+#+END_EXAMPLE
+
+And it exits with status 1.
+It did create a file, but it's just black where we tried to paste that nonexistent file,
+not a gray rectangle.
+
+What if we give it the good input, but without the .jpg extension?
+
+#+BEGIN_SRC sh
+output_image_size=128x128
+input_image=xc:black
+/usr/bin/convert -filter Box -size $output_image_size $input_image \
+	-draw "image over 88,35 41,29 '/.ccouch/temp/zmbx-41x29'" \
+	/.ccouch/temp/composite-noext.jpg
+#+END_SRC
+
+Result: Works as you'd expect.
+
+Can I shed light on all this by logging all commands run?
+
+[2021-05-17T16:21:25-05:00] Build a new togos/picgrid:dev (9300dc2f4281) that dumps all commands being run.
+I should probably add a ~-debug~ option for that sort of thing so I don't have to build new images.
+
+So to try it out...
+
+#+BEGIN_SRC sh
+docker run \
+       -v "/home/tog/.ccouch":/.ccouch \
+       togos/picgrid:dev compose \
+       -datastore /.ccouch/data/picgrid \
+       -ms-datasource /.ccouch/data \
+       -page-style hover \
+       -layouter multifit:1024x768 \
+	x-rdf-subject:urn:bitprint:YC5EB64KSX4R7CD7MWJSMYGK7JRMPPGZ.QNKVYTK6UEPLMMUWNSOMARGWU7AF3RYCJBP3FHQ
+#+END_SRC
+
+Dumping to [[./doc/20210517-commands.txt]]
+
+Okay what the hell is ~-fKilter~, huh?
+
+#+BEGIN_EXAMPLE
+$ "/usr/bin/convert" "/.ccouch/data/pictures/RA/RACF7T5QX5XF2HOQQLNZPKYJY3BN22PC" "-fKilter" "Box" "-thumbnail" "22x31^" "-gravity" "Center" "-extent" "22x31" "-quality" "85" "/.ccouch/data/picgrid/.temp-451198785-2136187886-167414312.jpg"
+#+END_EXAMPLE
+
+But good thing it says "fKilter" because I can grep for it and find that
+this is being done by ImageMagickCropResizer,
+not ImageMagickResizer.
+And when it fails, I DRAW THOSE GRAY RECTANGLES!
+Oy.
+
+Let's remove that "K" and see if things work better.
+
+Also I'm making debugging a runtime-configurable thing.
+
+#+BEGIN_EXAMPLE
+src/main/scala/togos/picgrid/CommandLineExecutor.scala:3: warning: imported `Logger' is permanently hidden by definition of object Logger in package picgrid
+import togos.picgrid.Logger
+#+END_EXAMPLE
+
+I guess Scala doesn't like it when you import a thing that's
+already in the current package.
+
+Anyway.
+
+#+BEGIN_EXAMPLE
+Successfully built f021d1701154
+Successfully tagged togos/picgrid:dev
+make: Leaving directory '/home/tog/proj/PicGrid/docker'
+#+END_EXAMPLE
+
+So now running...
+
+#+BEGIN_SRC sh
+docker run \
+	-v "/home/tog/.ccouch":/.ccouch \
+	togos/picgrid:dev compose \
+	-datastore /.ccouch/data/picgrid \
+	-ms-datasource /.ccouch/data \
+	-page-style hover \
+	-layouter multifit:1024x768 \
+	 x-rdf-subject:urn:bitprint:YC5EB64KSX4R7CD7MWJSMYGK7JRMPPGZ.QNKVYTK6UEPLMMUWNSOMARGWU7AF3RYCJBP3FHQ \
+	 >doc/20210517T16-f021d1701154-commands.txt 2>&1
+#+END_SRC
+
+[[http://togos-fbs.nuke24.net/uri-res/raw/urn:bitprint:5U6UDEO7AD6GWNLJ7LTIZZYBZQMACFIW.OJEGQH4DOEDITB45IM2H23OROI7MSBK6GMIKNDQ/test.html][Yay that fixed it!]]
+And [[./doc/20210517T16-f021d1701154-commands.txt][here]] are the commands it ran.
