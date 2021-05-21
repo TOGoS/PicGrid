@@ -47,6 +47,7 @@ class CompoundImageRasterizer(
 				}
 				functionCache( imageUri ) = rasterizedUri
 			}
+			GlobalContext.debug("rasterized "+imageUri+" = "+rasterizedUri)
 			return rasterizedUri
 		}
 		throw new Exception("Don't know how to rasterize image type: "+imageType)
@@ -106,7 +107,12 @@ class CompoundImageRasterizer(
 			args += destFile.getPath()
 			val res = imConvert.run(args.toArray[String])
 			if( res != 0 ) {
-				throw new Exception("convert returned non-zero status!")
+				val message : String = "convert returned non-zero status: "+CommandLine.argumentsToString(args);
+				if( GlobalContext.tolerateComposeErrors ) {
+					GlobalContext.warn(message)
+				} else {
+					throw new Exception(message)
+				}
 			}
 			if( currentFile != null ) currentFile.delete()
 			currentImage = destFile.getPath()

@@ -13,7 +13,7 @@ import togos.picgrid.store.MigratingStore
 import togos.picgrid.FunctionCache
 import togos.picgrid.file.SLFFunctionCache
 import togos.picgrid.file.SLF2FunctionCache
-import togos.picgrid.Logger
+import togos.picgrid.GlobalContext
 import togos.picgrid.MemoryFunctionCache
 import togos.picgrid.image.ImageMagickCommands
 import togos.picgrid.file.FSSHA1Datastore
@@ -46,6 +46,7 @@ object ComposeCommand
 		"  -function-cache-dir <dir> ; dir to store function results in\n" +
 		"  -datastore <dir> ; dir to store output data in\n" +
 		"  -datasource <dir> ; dir in which to find input data\n" +
+		"  -tolerate-compose-errors ; Carry on when composite image rasterization fails\n" +
 		"  -ms-datasource <dir> ; dir containing dirs in which to find input data\n" +
 		"  -resource-log <file> ; file ('-' means standard output) to which to write\n" +
 		"                       ; URNs of generated and referenced blobs.\n" +
@@ -84,7 +85,9 @@ object ComposeCommand
 				case "-v" =>
 					verbose = true
 				case "-debug" =>
-					Logger.debuggingEnabled = true
+					GlobalContext.debuggingEnabled = true
+				case "-tolerate-compose-errors" =>
+					GlobalContext.tolerateComposeErrors = true
 				case "-layouter" =>
 					i += 1
 					layouterName = args(i)
