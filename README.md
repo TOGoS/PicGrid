@@ -4,13 +4,15 @@ Transforms directories full of pictures into recursive structures
 where each directory is represented by a picture of its contents
 packed into a rectangle.
 
-![For example, this directory of mushroom pictures](http://picture-files.nuke24.net/uri-res/raw/urn:bitprint:TL6JFRX2TOGYQQFNU7S7OEKZ5E7V5IX7.MO4VQTEUYYTT4JCZ5VWXAY2QJ4MYXRYA7XNJ4LI/Mushrooms.jpg)
+## Examples
 
-Examples:
-- [Browseable version of the above](http://picture-files.nuke24.net/uri-res/raw/urn:bitprint:32B7UZ4SORCYNVM7ZRPG5UBJA3DDR4TB.2EALXNOSI7JNBPIIM7TN6672WVGVGXAXM25OHNA/Mushroom.html)
-- [Another photo album](http://picture-files.nuke24.net/uri-res/raw/urn:bitprint:ZUSSZNX5QOYJZM4VPBUNYJ5WBZH67TBT.NCYZ74FYVFHXXIWLMWAQ5ZQOA4LBENMLSI3ULVA/Travel.html)
+[![A collection of mushroom photos](http://picture-files.nuke24.net/uri-res/raw/urn:bitprint:TL6JFRX2TOGYQQFNU7S7OEKZ5E7V5IX7.MO4VQTEUYYTT4JCZ5VWXAY2QJ4MYXRYA7XNJ4LI/Mushrooms.jpg)](http://picture-files.nuke24.net/uri-res/raw/urn:bitprint:32B7UZ4SORCYNVM7ZRPG5UBJA3DDR4TB.2EALXNOSI7JNBPIIM7TN6672WVGVGXAXM25OHNA/Mushroom.html)
 
-It takes as input RDF+XML representations of directories as created by
+[![A subset of my 'travel' photos](http://picture-files.nuke24.net/uri-res/raw/urn:bitprint:FTNY4PJ5FSFLMQSSPQ6RFJAJELIB2JQG.2ZTKMUA4MMIIOCX7BC2MWU242AEWCPRFO2IDFUI/Travel.jpg)](http://picture-files.nuke24.net/uri-res/raw/urn:bitprint:ZUSSZNX5QOYJZM4VPBUNYJ5WBZH67TBT.NCYZ74FYVFHXXIWLMWAQ5ZQOA4LBENMLSI3ULVA/Travel.html)
+
+## Operation
+
+PicGrid is a command-line Java program takes as input RDF+XML representations of directories as created by
 ContentCouch and also stores the results into a ContentCouch repository.
 
 ContentCouch (the program) is not required for PicGrid to run, though
