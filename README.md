@@ -13,7 +13,10 @@ packed into a rectangle.
 ## Operation
 
 PicGrid is a command-line Java program takes as input RDF+XML representations of directories as created by
-ContentCouch and also stores the results into a ContentCouch repository.
+[ContentCouch](https://github.com/TOGoS/ContentCouch) and also stores the results into a ContentCouch repository.
+Basically, inputs and outputs are stored in
+[a 'repository' directory](https://github.com/TOGoS/ContentCouchRepositoryFormat#directory-structure)
+based on their base32-encoded SHA-1 hash.
 
 ContentCouch (the program) is not required for PicGrid to run, though
 it is useful for generating input.
