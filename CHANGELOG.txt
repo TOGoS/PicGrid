@@ -1,0 +1,10 @@
+---------------------------------------------------------------------------------------------------
+Version: 1.0.4
+Date: 2021-05-21
+JAR: urn:bitprint:MHCBD2MXEC6MK7XEQFHUYH32LDFFY64Y.B35WONFW2K5VE6NTIN4A3UXCMO3ZEYGX3MNEA3Y
+Docker-Image-Name: togos/picgrid:1.0.4
+Docker-Image-SHA256: 8fcb499ad087183183761bc32e9d7c05ea935c2bb3c179df8bbe017d28918c01
+Changes:
+  - More debug messages, using GlobalContext
+  - `compose -tolerate-compose-errors` to keep going even if `convert` returns non-zero
+---------------------------------------------------------------------------------------------------
