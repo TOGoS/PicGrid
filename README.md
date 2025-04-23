@@ -39,4 +39,4 @@ and/or building a PicGrid docker container.
 
 ## To use the latest Docker container
 
-```docker run togos/picgrid:latest```.
+```docker run --rm togos/picgrid:latest```.
